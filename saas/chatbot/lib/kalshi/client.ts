@@ -20,8 +20,7 @@ import type {
   KalshiTrade,
 } from "./types";
 
-export const KALSHI_BASE_URL =
-  "https://api.elections.kalshi.com/trade-api/v2";
+export const KALSHI_BASE_URL = "https://api.elections.kalshi.com/trade-api/v2";
 
 // ─── Auth signing ─────────────────────────────────────────────────────────────
 
@@ -45,15 +44,11 @@ function buildAuthHeaders(
   const message = timestamp + method.toUpperCase() + signingPath;
   const privateKey = crypto.createPrivateKey(credentials.privateKeyPem);
 
-  const signature = crypto.sign(
-    "sha256",
-    Buffer.from(message),
-    {
-      key: privateKey,
-      padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
-      saltLength: crypto.constants.RSA_PSS_SALTLEN_DIGEST,
-    }
-  );
+  const signature = crypto.sign("sha256", Buffer.from(message), {
+    key: privateKey,
+    padding: crypto.constants.RSA_PKCS1_PSS_PADDING,
+    saltLength: crypto.constants.RSA_PSS_SALTLEN_DIGEST,
+  });
 
   return {
     "KALSHI-ACCESS-KEY": credentials.apiKey,
@@ -111,6 +106,10 @@ async function kalshiFetch<T>(
     } catch {
       // ignore parse errors
     }
+    console.error(
+      `[kalshi] ${method} ${path} → ${res.status}`,
+      errorData ?? res.statusText
+    );
     throw new KalshiError(
       res.status,
       errorData?.code ?? "unknown",
@@ -132,8 +131,7 @@ export function createKalshiClient(credentials: KalshiCredentials) {
   const post = <T>(path: string, body: unknown) =>
     kalshiFetch<T>(credentials, "POST", path, undefined, body);
 
-  const del = <T>(path: string) =>
-    kalshiFetch<T>(credentials, "DELETE", path);
+  const del = <T>(path: string) => kalshiFetch<T>(credentials, "DELETE", path);
 
   return {
     // ── Events ──────────────────────────────────────────────────────────────

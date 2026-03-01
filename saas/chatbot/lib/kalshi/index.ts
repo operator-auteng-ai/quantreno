@@ -1,15 +1,14 @@
 import "server-only";
-import { decrypt } from "./encrypt";
-import { createKalshiClient } from "./client";
 import {
   getKalshiCredentialByUserId,
   touchKalshiCredential,
 } from "@/lib/db/queries";
-import { KalshiError } from "./client";
+import { createKalshiClient } from "./client";
+import { decrypt } from "./encrypt";
 
-export { createKalshiClient, KalshiError, KALSHI_BASE_URL } from "./client";
-export { encrypt, decrypt } from "./encrypt";
 export type { KalshiClient } from "./client";
+export { createKalshiClient, KALSHI_BASE_URL, KalshiError } from "./client";
+export { decrypt, encrypt } from "./encrypt";
 export * from "./types";
 
 /**
@@ -29,8 +28,21 @@ export async function getKalshiClientForUser(
     );
   }
 
-  const apiKey = decrypt(row.apiKeyEncrypted);
-  const privateKeyPem = decrypt(row.privateKeyEncrypted);
+  let apiKey: string;
+  let privateKeyPem: string;
+  try {
+    apiKey = decrypt(row.apiKeyEncrypted);
+    privateKeyPem = decrypt(row.privateKeyEncrypted);
+  } catch (err) {
+    console.error(
+      "[kalshi] Failed to decrypt credentials for user",
+      userId,
+      err
+    );
+    throw new Error(
+      "Failed to decrypt Kalshi credentials. Please re-enter them in Settings."
+    );
+  }
 
   // Fire-and-forget usage timestamp (non-blocking)
   touchKalshiCredential({ userId }).catch(() => {});

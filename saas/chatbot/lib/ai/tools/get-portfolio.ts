@@ -119,11 +119,12 @@ Use when the user asks "how are my positions?", "what's my P&L?", or "portfolio 
           total_realized_pnl_dollars: (totalRealizedCents / 100).toFixed(2),
         };
       } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to fetch portfolio";
+        console.error("[getPortfolio] Kalshi API error:", message, error);
         return {
-          error:
-            error instanceof Error
-              ? error.message
-              : "Failed to fetch portfolio",
+          success: false,
+          error: `KALSHI API ERROR: ${message}. The user should check Settings > Kalshi Account.`,
           balance_cents: 0,
           balance_dollars: "0.00",
           positions: [],

@@ -62,11 +62,12 @@ current P&L, or to see which markets the user is already exposed to.`,
           resting_order_count: ordersData.orders.length,
         };
       } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Failed to fetch portfolio";
+        console.error("[getPositions] Kalshi API error:", message, error);
         return {
-          error:
-            error instanceof Error
-              ? error.message
-              : "Failed to fetch portfolio",
+          success: false,
+          error: `KALSHI API ERROR: ${message}. The user should check Settings > Kalshi Account.`,
           balance_cents: 0,
           balance_dollars: "0.00",
           positions: [],
