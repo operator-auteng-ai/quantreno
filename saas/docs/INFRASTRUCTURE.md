@@ -74,6 +74,8 @@ Security: Vercel auto-injects `CRON_SECRET` as `Authorization: Bearer` header. R
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe dashboard | Client-side Stripe.js |
 | `RESEND_API_KEY` | Resend dashboard | Transactional email sending |
 | `KALSHI_ENCRYPTION_KEY` | Generate: `openssl rand -hex 32` | AES-256 key for encrypting user Kalshi credentials |
+| `TAVILY_API_KEY` | [tavily.com](https://tavily.com) | Web search for catalyst research (free: 1,000 searches/mo) |
+| `BEARER_TOKEN` | [developer.x.com](https://developer.x.com) | X API v2 bearer token for tweet sentiment search |
 | `CRON_SECRET` | Auto-set by Vercel | Cron job authentication |
 | `NEXT_PUBLIC_APP_URL` | Set manually | Base URL for QStash callback targets |
 
