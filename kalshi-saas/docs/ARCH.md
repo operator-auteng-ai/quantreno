@@ -29,26 +29,26 @@
 ```mermaid
 graph TB
     subgraph Client ["Browser"]
-        UI[Chat UI<br/>Next.js RSC + Client Components]
+        UI["Chat UI"]
     end
 
     subgraph Vercel ["Vercel"]
-        MW[Middleware<br/>Auth + Route Protection]
-        API[API Routes<br/>/api/chat, /api/jobs/*]
-        SA[Server Actions<br/>Mutations]
-        CRON[Vercel Cron<br/>Scheduled triggers]
+        MW["Middleware"]
+        API["API Routes"]
+        SA["Server Actions"]
+        CRON["Vercel Cron"]
     end
 
     subgraph External ["External Services"]
-        SUPA[(Supabase Postgres)]
-        REDIS[(Upstash Redis)]
-        QSTASH[Upstash QStash]
-        KALSHI[Kalshi REST API]
-        AIGATE[AI Gateway<br/>Claude / GPT / Gemini]
-        SEARCH[Web + X Search]
-        STRIPE[Stripe]
-        EMAIL[Resend]
-        BLOB[Vercel Blob]
+        SUPA[("Supabase Postgres")]
+        REDIS[("Upstash Redis")]
+        QSTASH["Upstash QStash"]
+        KALSHI["Kalshi REST API"]
+        AIGATE["AI Gateway"]
+        SEARCH["Web + X Search"]
+        STRIPE["Stripe"]
+        EMAIL["Resend"]
+        BLOB["Vercel Blob"]
     end
 
     UI --> MW --> API
@@ -382,26 +382,26 @@ graph LR
     end
 
     subgraph Trading ["New: Trading"]
-        T4[getMarkets<br/>Scan Kalshi events + markets]
-        T5[getPositions<br/>User's Kalshi positions + balance]
-        T6[createOrder<br/>Place limit order on Kalshi]
-        T7[cancelOrder<br/>Cancel resting order]
+        T4["getMarkets"]
+        T5["getPositions"]
+        T6["createOrder"]
+        T7["cancelOrder"]
     end
 
     subgraph Research ["New: Research"]
-        T8[webSearch<br/>Multi-source web search]
-        T9[xSearch<br/>X/Twitter real-time sentiment]
+        T8["webSearch"]
+        T9["xSearch"]
     end
 
     subgraph Strategy ["New: Strategy"]
-        T10[listStrategies<br/>User's saved strategies]
-        T11[runStrategy<br/>Execute strategy playbook]
-        T12[saveStrategy<br/>Create/update strategy config]
+        T10["listStrategies"]
+        T11["runStrategy"]
+        T12["saveStrategy"]
     end
 
     subgraph Portfolio ["New: Portfolio"]
-        T13[getPortfolio<br/>Positions, P&L, performance]
-        T14[getTradeHistory<br/>Past trades + outcomes]
+        T13["getPortfolio"]
+        T14["getTradeHistory"]
     end
 ```
 
@@ -418,29 +418,29 @@ graph LR
 ```mermaid
 graph TB
     subgraph Input
-        NL[User natural language<br/>"Create a strategy for tech regulation..."]
-        TPL[Built-in template<br/>oil / fat-tails / vol-swing / spread-arb]
+        NL["User natural language"]
+        TPL["Built-in template"]
     end
 
     subgraph Processing
-        AI[AI structures into config]
-        VAL[Validate against JSON schema]
+        AI["AI structures into config"]
+        VAL["Validate against JSON schema"]
     end
 
-    subgraph StrategyConfig ["Strategy Config (JSON)"]
-        F[filters<br/>keywords, event types, price range]
-        E[entry_rules<br/>max price, min volume, min edge]
-        X[exit_rules<br/>target price, stop loss, time decay]
-        S[sizing<br/>max per trade, Kelly fraction, portfolio cap]
-        R[research<br/>search queries, source priority]
-        TH[thesis_template<br/>required fields for documentation]
+    subgraph StrategyConfig ["Strategy Config - JSON"]
+        F["filters"]
+        E["entry_rules"]
+        X["exit_rules"]
+        S["sizing"]
+        R["research"]
+        TH["thesis_template"]
     end
 
     subgraph Execution
-        SCAN[Market Scan<br/>Filter Kalshi events against config]
-        RES[Research Phase<br/>Web + X search per config]
-        RANK[Rank + Recommend<br/>Edge calculation, sizing]
-        TRADE[User approves → Execute]
+        SCAN["Market Scan"]
+        RES["Research Phase"]
+        RANK["Rank + Recommend"]
+        TRADE["User approves + Execute"]
     end
 
     NL --> AI --> VAL --> StrategyConfig
