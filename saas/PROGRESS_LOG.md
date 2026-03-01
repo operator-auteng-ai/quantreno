@@ -135,3 +135,50 @@
 - WORKFLOW.md session start process not followed (no doc read order) — UP_NEXT.md and PROGRESS_LOG.md retroactively updated (corrected in this session)
 - Added `BEARER_TOKEN` and `TAVILY_API_KEY` as required env vars — not yet in INFRASTRUCTURE.md env var list
 - Used context7 MCP for library documentation (added to MEMORY.md)
+
+---
+
+## 2026-03-01 — Phase 0.1–0.3 Infrastructure + Redirect Fix
+
+**Phase:** 0 Infrastructure (Vercel + Supabase + Upstash + Google OAuth)
+
+### Changes
+
+**Infrastructure Setup**
+- Created `.env.local` with `AUTH_SECRET`, `KALSHI_ENCRYPTION_KEY`, `POSTGRES_URL`, `REDIS_URL`, `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET`
+- Supabase: project created (ref: `tsmqzoqqrkisxjjxapxp`), POSTGRES_URL (transaction mode, port 6543), ran `pnpm db:migrate` — all 12 tables created
+- Upstash Redis: instance created, `REDIS_URL` (rediss:// format for `redis` npm package, not REST API format)
+- Google OAuth: Google Cloud Console → OAuth 2.0 client created, redirect URIs added for localhost + Vercel
+- All env vars added to Vercel (Production + Preview + Development)
+- Vercel deployment connected to `operator-auteng-ai/trading` repo
+
+**Git History Cleanup**
+- Rewrote all 22 commits to replace `pwidden@gmail.com / Paul Widden` with `operator@auteng.ai / operator-auteng-ai` using `git filter-branch --env-filter`
+- Updated `git config user.email` and `user.name` for future commits
+- Force-pushed rewritten history to origin
+
+**proxy.ts Redirect Loop Fix**
+- Root cause: `proxy.ts` (Next.js 16 middleware equivalent) was redirecting ALL unauthenticated requests — including `/login` itself — to `/api/auth/guest`, which redirected back to `/login`
+- Fix: check `/login` and `/register` AFTER fetching JWT token, not before
+  - Authenticated users on auth pages → redirect to `/`
+  - Unauthenticated users on auth pages → let through (show the page)
+  - Unauthenticated users on all other routes → redirect to `/login`
+- Also removed dead `guestRegex` import; changed unauthenticated redirect target from `/api/auth/guest` to `/login` directly
+
+### Files Created
+- `saas/chatbot/.env.local`
+
+### Files Modified
+- `saas/chatbot/proxy.ts` — auth routing logic rewrite
+- `.gitignore` — added `.mcp.json`, `*.tsbuildinfo`
+- `saas/chatbot/next-env.d.ts` — updated to prod route types after build
+
+### Commits
+- `46bd142` — chore: update gitignore and next-env types after prod build
+- `b3cb8ac` — chore: remove tsconfig.tsbuildinfo from git tracking
+- `fa370d2` — fix: resolve redirect loop on login page
+
+### Decisions / Deviations
+- Single Supabase + Upstash instance for both dev and prod — acceptable for solo dev with no real users; separate dev project deferred to Phase 3+
+- Vercel MCP connector (OAuth) added but not surfacing in Claude Code session — connector system incompatible with Claude Code CLI; use Vercel dashboard directly
+- `proxy.ts` confirmed as Next.js 16's replacement for `middleware.ts` — was not in initial chatbot fork, caused the redirect loop bug
