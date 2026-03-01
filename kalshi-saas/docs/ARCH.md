@@ -1,6 +1,6 @@
 # Architecture
 
-> High-level architecture for the Kalshi Trading Agent SaaS.
+> High-level architecture for the SaaS trading platform.
 > See [VISION.md](VISION.md) for product scope and pricing.
 
 ---

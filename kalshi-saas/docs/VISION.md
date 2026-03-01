@@ -1,8 +1,8 @@
-# Kalshi Trading Agent — SaaS Vision
+# SaaS — Product Vision
 
 ## One-Liner
 
-An AI-powered prediction market trading assistant that researches, analyzes, and executes trades on Kalshi — delivered as a conversational SaaS.
+An AI-powered trading assistant that researches, analyzes, and executes trades across prediction markets, options, and crypto — delivered as a conversational SaaS. V1 launches with Kalshi; V2+ adds Tradier (LEAPs), Coinbase (crypto), and cross-ecosystem mispricing detection.
 
 ---
 
@@ -236,7 +236,7 @@ The Vercel chatbot gives us a production-grade foundation:
 
 - Mobile app (web-first, responsive)
 - Automated trading / bots (user must confirm every trade)
-- Multi-exchange support (Kalshi only)
+- Multi-exchange support (V1 is Kalshi only — Tradier, Coinbase, and cross-ecosystem mispricings are V2+)
 - Social / copy trading (single-user only in V1)
 - Custom model fine-tuning
-- Real-time price charts (link to Kalshi's UI instead)
+- Real-time price charts (link to exchange UI instead)

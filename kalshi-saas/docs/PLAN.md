@@ -1,6 +1,6 @@
 # Implementation Plan
 
-> Phased build plan for the Kalshi Trading Agent SaaS.
+> Phased build plan for the SaaS trading platform.
 > References: [VISION.md](VISION.md) (what), [ARCH.md](ARCH.md) (how), [INFRASTRUCTURE.md](INFRASTRUCTURE.md) (where).
 
 ---
@@ -410,10 +410,11 @@ Phase 0 (Foundation)
 
 Not in scope for MVP, but planned:
 
+- **Multi-exchange integration** — Tradier (LEAPs/options), Coinbase (crypto), Polymarket, PredictIt
+- **Cross-ecosystem mispricings** — detect arbitrage and correlated opportunities across prediction markets, options chains, and crypto (e.g., Kalshi event probability vs. options implied vol vs. crypto sentiment)
 - **Strategy marketplace** — users share/sell strategy configs
-- **Portfolio analytics dashboard** — visual P&L charts, strategy comparison
+- **Portfolio analytics dashboard** — visual P&L charts, strategy comparison across exchanges
 - **Mobile PWA** — responsive web app installable on phone
-- **Multi-exchange** — Polymarket, PredictIt integration
 - **Automated monitoring trades** — Premium feature: agent can execute pre-approved small trades on opportunities (with strict limits)
 - **API access** — REST API for programmatic strategy execution
 - **Team features** — shared portfolios, role-based access, audit log

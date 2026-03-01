@@ -1,6 +1,6 @@
 # Infrastructure
 
-> Deployment and service configuration for the Kalshi Trading Agent SaaS.
+> Deployment and service configuration for the SaaS trading platform.
 > See [ARCH.md](ARCH.md) for system architecture, [VISION.md](VISION.md) for product scope.
 
 ---

@@ -1,6 +1,6 @@
 # Taxonomy
 
-> Canonical naming conventions for the Kalshi Trading Agent SaaS.
+> Canonical naming conventions for the SaaS trading platform.
 > All code, docs, UI copy, and database schemas must use these terms consistently.
 
 ---
