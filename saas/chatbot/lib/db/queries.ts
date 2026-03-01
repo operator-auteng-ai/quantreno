@@ -66,6 +66,29 @@ export async function createUser(email: string, password: string) {
   }
 }
 
+/**
+ * Look up a user by email; create them with no password if they don't exist.
+ * Used for OAuth sign-ins (Google etc.) where we manage sessions ourselves.
+ */
+export async function getOrCreateOAuthUser(
+  email: string
+): Promise<{ id: string; email: string }> {
+  const existing = await getUser(email);
+  if (existing.length > 0) {
+    return { id: existing[0].id, email: existing[0].email };
+  }
+
+  try {
+    const [created] = await db
+      .insert(user)
+      .values({ email, password: null })
+      .returning({ id: user.id, email: user.email });
+    return created;
+  } catch (_error) {
+    throw new ChatbotError("bad_request:database", "Failed to create OAuth user");
+  }
+}
+
 export async function createGuestUser() {
   const email = `guest-${Date.now()}`;
   const password = generateHashedPassword(generateUUID());

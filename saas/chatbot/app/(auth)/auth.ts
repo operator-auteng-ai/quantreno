@@ -2,8 +2,9 @@ import { compare } from "bcrypt-ts";
 import NextAuth, { type DefaultSession } from "next-auth";
 import type { DefaultJWT } from "next-auth/jwt";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
 import { DUMMY_PASSWORD } from "@/lib/constants";
-import { createGuestUser, getUser } from "@/lib/db/queries";
+import { getOrCreateOAuthUser, getUser } from "@/lib/db/queries";
 import { authConfig } from "./auth.config";
 
 export type UserType = "guest" | "regular";
@@ -38,6 +39,10 @@ export const {
 } = NextAuth({
   ...authConfig,
   providers: [
+    // Google OAuth — reads AUTH_GOOGLE_ID / AUTH_GOOGLE_SECRET from env
+    Google,
+
+    // Email + password (for existing users and manual testing)
     Credentials({
       credentials: {},
       async authorize({ email, password }: any) {
@@ -51,6 +56,7 @@ export const {
         const [user] = users;
 
         if (!user.password) {
+          // OAuth-only account — reject password sign-in
           await compare(password, DUMMY_PASSWORD);
           return null;
         }
@@ -64,24 +70,39 @@ export const {
         return { ...user, type: "regular" };
       },
     }),
-    Credentials({
-      id: "guest",
-      credentials: {},
-      async authorize() {
-        const [guestUser] = await createGuestUser();
-        return { ...guestUser, type: "guest" };
-      },
-    }),
   ],
   callbacks: {
-    jwt({ token, user }) {
+    async signIn({ account, profile }) {
+      // Upsert user into our DB on first Google sign-in
+      if (account?.provider === "google" && profile?.email) {
+        try {
+          await getOrCreateOAuthUser(profile.email);
+        } catch {
+          return false;
+        }
+      }
+      return true;
+    },
+
+    async jwt({ token, user, account }) {
       if (user) {
         token.id = user.id as string;
-        token.type = user.type;
+        token.type = user.type ?? "regular";
+      }
+
+      // After Google sign-in, replace the Google sub with our DB UUID.
+      // account is only present on the first sign-in, so this runs once.
+      if (account?.provider === "google" && token.email) {
+        const dbUsers = await getUser(token.email);
+        if (dbUsers.length > 0) {
+          token.id = dbUsers[0].id;
+          token.type = "regular";
+        }
       }
 
       return token;
     },
+
     session({ session, token }) {
       if (session.user) {
         session.user.id = token.id;
