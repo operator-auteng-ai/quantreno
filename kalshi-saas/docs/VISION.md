@@ -164,51 +164,19 @@ The Vercel chatbot gives us a production-grade foundation:
 - Feature gating by tier
 - Upgrade/downgrade flows
 
-### 6. Scheduled Operations (Vercel Cron + QStash Fan-Out)
+### 6. Scheduled Operations
 - **Position checks** — poll Kalshi for price changes, fill status, new settlements
-  - Standard: 5x/day during market hours (9am, 11am, 1pm, 3pm, 5pm ET)
+  - Standard: 5x/day during market hours
   - Premium: every hour, 24/7
-- **Opportunity scanning** — scan for new events matching user strategies, flag mispriced contracts (AI-powered, per-user)
+- **Opportunity scanning** — scan for new events matching user strategies, flag mispriced contracts
 - **Alert notifications** — notify users when positions hit targets, stop losses, or catalysts fire (email + in-app)
 - **Daily performance snapshots** — automated end-of-day P&L and portfolio recording
-- **Implementation — two-tier architecture:**
-  - **Lightweight checks (no AI):** Vercel Cron → `/api/jobs/dispatch` — single function batches all eligible users, fetches Kalshi prices, updates positions, fires threshold alerts. Handles 100+ users in one invocation (<10s).
-  - **AI-heavy scans (per-user):** Dispatch route fans out via **Upstash QStash** — enqueues one message per user/strategy to `/api/jobs/scan-user/[userId]`. Each user gets their own serverless function invocation (parallel, 60s budget each). QStash provides retries, rate limiting, delivery guarantees.
-  - Secured via `CRON_SECRET` (Vercel) and QStash signature verification.
 
 ### 7. Admin & Operations
 - User management dashboard
 - Usage analytics and cost tracking
 - Content moderation (prevent market manipulation)
 - System health monitoring
-
----
-
-## Architecture Decision: Next.js Monolith
-
-The Vercel chatbot is a **full-stack Next.js app** — not just a frontend. It already has:
-
-- **Server-side API routes** (`/api/chat`, `/api/document`, `/api/files/upload`, etc.)
-- **Server actions** for mutations (login, register, delete messages, update visibility)
-- **Drizzle ORM** querying PostgreSQL directly from API routes
-- **Middleware** (`proxy.ts`) for auth enforcement
-
-We keep this pattern. No separate backend service. The Next.js app IS the backend. Vercel Cron Jobs handle scheduled operations by hitting API routes on a timer:
-
-```
-Browser → Next.js API Routes → Drizzle ORM → Supabase Postgres
-                             → Kalshi REST API
-                             → AI SDK → LLM Providers
-                             → Web/X Search APIs
-
-Vercel Cron → /api/jobs/dispatch → Batch: Kalshi price checks, threshold alerts
-                               → Fan-out via QStash: /api/jobs/scan-user/[id]
-                                 → AI analysis per user/strategy
-                                 → Supabase Postgres (state updates)
-                                 → Email service (alerts)
-```
-
-Kalshi API calls happen server-side inside AI SDK tool executions or dedicated API routes. The user's Kalshi API credentials are stored encrypted in Supabase and never touch the browser.
 
 ---
 
