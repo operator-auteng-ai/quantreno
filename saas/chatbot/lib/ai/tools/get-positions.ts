@@ -32,7 +32,7 @@ current P&L, or to see which markets the user is already exposed to.`,
             : Promise.resolve({ orders: [] }),
         ]);
 
-        const positions = positionsData.market_exposures.filter(
+        const positions = (positionsData.positions ?? []).filter(
           (p) => p.position !== 0
         );
 

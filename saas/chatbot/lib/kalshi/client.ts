@@ -206,7 +206,7 @@ export function createKalshiClient(credentials: KalshiCredentials) {
     // ── Portfolio: positions ──────────────────────────────────────────────────
 
     async getPositions(params: GetPositionsParams = {}): Promise<{
-      market_exposures: KalshiPosition[];
+      positions: KalshiPosition[];
       cursor?: string;
     }> {
       return get("/portfolio/positions", {

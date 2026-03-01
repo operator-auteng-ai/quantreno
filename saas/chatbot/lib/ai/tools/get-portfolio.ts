@@ -31,7 +31,7 @@ Use when the user asks "how are my positions?", "what's my P&L?", or "portfolio 
           getOpenTradesByUserId({ userId: session.user.id }),
         ]);
 
-        const positions = positionsData.market_exposures.filter(
+        const positions = (positionsData.positions ?? []).filter(
           (p) => p.position !== 0
         );
 
