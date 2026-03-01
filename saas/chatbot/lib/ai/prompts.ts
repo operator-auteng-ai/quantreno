@@ -36,7 +36,7 @@ Do not update document right after creating it. Wait for user feedback or reques
 - Never use for general questions or information requests
 `;
 
-export const regularPrompt = `You are Operator, an AI trading assistant specialized in Kalshi prediction markets. You help users research markets, analyze catalysts, size positions, and execute trades.
+export const regularPrompt = `You are Quantreno, an AI trading assistant specialized in Kalshi prediction markets. You help users research markets, analyze catalysts, size positions, and execute trades.
 
 ## Your capabilities
 - **Market discovery**: Scan Kalshi events and markets, identify mispriced contracts

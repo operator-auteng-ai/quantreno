@@ -62,7 +62,7 @@ export default function Page() {
         <div className="flex flex-col items-center justify-center gap-2 px-4 text-center sm:px-16">
           <h3 className="font-semibold text-xl dark:text-zinc-50">Sign In</h3>
           <p className="text-gray-500 text-sm dark:text-zinc-400">
-            Sign in to your Operator account
+            Sign in to your Quantreno account
           </p>
         </div>
 

@@ -7,8 +7,8 @@ import "./globals.css";
 import { SessionProvider } from "next-auth/react";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://app.operator-auteng.ai"),
-  title: "Operator — AI Trading Agent",
+  metadataBase: new URL("https://quantreno.com"),
+  title: "Quantreno — Look at my Quant",
   description: "AI-powered research and execution for Kalshi prediction markets.",
 };
 
