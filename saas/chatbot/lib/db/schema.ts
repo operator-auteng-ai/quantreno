@@ -168,3 +168,19 @@ export const stream = pgTable(
 );
 
 export type Stream = InferSelectModel<typeof stream>;
+
+// ─── Trading tables ───────────────────────────────────────────────────────────
+
+export const kalshiCredential = pgTable("KalshiCredential", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  userId: uuid("userId")
+    .notNull()
+    .references(() => user.id)
+    .unique(),
+  apiKeyEncrypted: text("apiKeyEncrypted").notNull(),
+  privateKeyEncrypted: text("privateKeyEncrypted").notNull(),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  lastUsedAt: timestamp("lastUsedAt"),
+});
+
+export type KalshiCredential = InferSelectModel<typeof kalshiCredential>;

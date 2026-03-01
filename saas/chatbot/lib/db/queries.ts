@@ -23,6 +23,8 @@ import {
   chat,
   type DBMessage,
   document,
+  kalshiCredential,
+  type KalshiCredential,
   message,
   type Suggestion,
   stream,
@@ -598,5 +600,84 @@ export async function getStreamIdsByChatId({ chatId }: { chatId: string }) {
       "bad_request:database",
       "Failed to get stream ids by chat id"
     );
+  }
+}
+
+// ─── KalshiCredential queries ─────────────────────────────────────────────────
+
+export async function getKalshiCredentialByUserId({
+  userId,
+}: { userId: string }): Promise<KalshiCredential | null> {
+  try {
+    const [row] = await db
+      .select()
+      .from(kalshiCredential)
+      .where(eq(kalshiCredential.userId, userId))
+      .limit(1);
+    return row ?? null;
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to get Kalshi credential"
+    );
+  }
+}
+
+export async function upsertKalshiCredential({
+  userId,
+  apiKeyEncrypted,
+  privateKeyEncrypted,
+}: {
+  userId: string;
+  apiKeyEncrypted: string;
+  privateKeyEncrypted: string;
+}): Promise<KalshiCredential> {
+  try {
+    const [row] = await db
+      .insert(kalshiCredential)
+      .values({ userId, apiKeyEncrypted, privateKeyEncrypted })
+      .onConflictDoUpdate({
+        target: kalshiCredential.userId,
+        set: {
+          apiKeyEncrypted,
+          privateKeyEncrypted,
+          lastUsedAt: new Date(),
+        },
+      })
+      .returning();
+    return row;
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to save Kalshi credential"
+    );
+  }
+}
+
+export async function deleteKalshiCredential({
+  userId,
+}: { userId: string }): Promise<void> {
+  try {
+    await db
+      .delete(kalshiCredential)
+      .where(eq(kalshiCredential.userId, userId));
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to delete Kalshi credential"
+    );
+  }
+}
+
+export async function touchKalshiCredential({
+  userId,
+}: { userId: string }): Promise<void> {
+  try {
+    await db
+      .update(kalshiCredential)
+      .set({ lastUsedAt: new Date() })
+      .where(eq(kalshiCredential.userId, userId));
+  } catch (_error) {
+    // Non-fatal — just a usage timestamp
   }
 }
