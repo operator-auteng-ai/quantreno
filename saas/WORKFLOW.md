@@ -32,9 +32,9 @@
 
 ## Workspace Boundary
 
-- Project root: `/Users/paul/projects/claude/kalshi-saas/`
-- Chatbot fork: `/Users/paul/projects/claude/kalshi-saas/chatbot/`
-- Docs: `/Users/paul/projects/claude/kalshi-saas/docs/`
+- Project root: `/Users/paul/projects/claude/saas/`
+- Chatbot fork: `/Users/paul/projects/claude/saas/chatbot/`
+- Docs: `/Users/paul/projects/claude/saas/docs/`
 - Do not assume dependencies or config from the parent `/Users/paul/projects/claude/` trading project are valid for SaaS work.
 - All code lives within `chatbot/` (the Next.js app). `docs/` is planning only.
 
