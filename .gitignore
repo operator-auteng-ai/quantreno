@@ -16,5 +16,7 @@ __pycache__/
 .DS_Store
 
 .mcp.json
+.claude/
 
 *.tsbuildinfo
+saas/chatbot/next-env.d.ts
