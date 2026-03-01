@@ -16,7 +16,9 @@ import { cancelOrder } from "@/lib/ai/tools/cancel-order";
 import { createDocument } from "@/lib/ai/tools/create-document";
 import { createOrder } from "@/lib/ai/tools/create-order";
 import { getMarkets } from "@/lib/ai/tools/get-markets";
+import { getPortfolio } from "@/lib/ai/tools/get-portfolio";
 import { getPositions } from "@/lib/ai/tools/get-positions";
+import { getTradeHistory } from "@/lib/ai/tools/get-trade-history";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
 import { updateDocument } from "@/lib/ai/tools/update-document";
 import { webSearch } from "@/lib/ai/tools/web-search";
@@ -135,7 +137,9 @@ export async function POST(request: Request) {
     // Build session context: open trades from DB (non-blocking, best-effort)
     let sessionContext: string | undefined;
     try {
-      const openTrades = await getOpenTradesByUserId({ userId: session.user.id });
+      const openTrades = await getOpenTradesByUserId({
+        userId: session.user.id,
+      });
       if (openTrades.length > 0) {
         const lines = openTrades.map(
           (t) =>
@@ -160,6 +164,8 @@ export async function POST(request: Request) {
             : [
                 "getMarkets",
                 "getPositions",
+                "getPortfolio",
+                "getTradeHistory",
                 "createOrder",
                 "cancelOrder",
                 "webSearch",
@@ -178,6 +184,8 @@ export async function POST(request: Request) {
           tools: {
             getMarkets: getMarkets({ session }),
             getPositions: getPositions({ session }),
+            getPortfolio: getPortfolio({ session }),
+            getTradeHistory: getTradeHistory({ session }),
             createOrder: createOrder({ session }),
             cancelOrder: cancelOrder({ session }),
             webSearch,

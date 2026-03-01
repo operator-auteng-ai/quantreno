@@ -2,7 +2,7 @@
 
 ## Active Phase
 
-**Phase 1: Trading Core** — infrastructure complete, code gaps remain
+**Phase 1: Trading Core** — COMPLETE
 
 ## What Was Completed
 
@@ -35,31 +35,32 @@
 ### Phase 1.4 — Research Tools (2026-02-28)
 - `webSearch` (Tavily) and `xSearch` (X API v2) tools
 
-### Phase 1.5 — Trading State (partial, 2026-02-28)
+### Phase 1.5 — Trading State (2026-03-01)
 - Trade table + migration
 - Auto-log on `createOrder`/`cancelOrder`
-- **Not done:** `getPortfolio` tool, `getTradeHistory` tool
+- `getPortfolio` tool — live positions from Kalshi + unrealized P&L vs Trade table entry prices
+- `getTradeHistory` tool — query Trade table with status filtering and P&L summary
 
 ### Phase 1.6 — Session Context (2026-02-28)
 - Open trades injected into system prompt on each chat turn
 
 ---
 
-## Immediate Next Tasks
-
-### Phase 1 Gaps (code work)
-
-1. **`getPortfolio` tool** — fetch open positions from Kalshi live API, compute unrealized P&L vs Trade table entry prices, return summary
-2. **`getTradeHistory` tool** — query Trade table, return history with status (open/closed/cancelled)
-3. **Decide:** Position/Recommendation/Scan tables — are they needed, or does Trade + Kalshi live API cover Phase 1 needs?
-
-### Phase 1 Exit Criteria Status
+## Phase 1 Exit Criteria — All Met
 - [x] User can connect Kalshi account via settings
 - [x] User can ask "what's on Kalshi?" and get market data
 - [x] User can ask agent to research a thesis (web + X search)
 - [x] User can approve and execute trades via chat
-- [ ] Trades are logged and positions tracked — partial (Trade table, no `getTradeHistory` tool)
-- [ ] User can ask "how are my positions?" — `getPortfolio` not built
+- [x] Trades are logged and positions tracked
+- [x] User can ask "how are my positions?" — `getPortfolio` returns live P&L
+
+---
+
+## Immediate Next Tasks
+
+### Phase 2 — Ready to plan
+- See `docs/PLAN.md` for Phase 2 scope
+- Likely includes: automated scans (QStash cron), recommendations, multi-exchange support
 
 ---
 
@@ -67,7 +68,7 @@
 
 - None
 
-## Decisions Needed
+## Decisions Made
 
-- Are Position, Recommendation, Scan tables needed separately, or does Trade + Kalshi live data cover Phase 1 use cases?
-- For `getPortfolio`: fetch live prices from Kalshi per-position (accurate) or use Trade table entry prices (fast, stale)?
+- Position/Recommendation/Scan tables **deferred** — Trade table + Kalshi live API covers all Phase 1 use cases
+- `getPortfolio` fetches live prices from Kalshi per-position (accurate, not stale)

@@ -5,7 +5,9 @@ import type { cancelOrder } from "./ai/tools/cancel-order";
 import type { createDocument } from "./ai/tools/create-document";
 import type { createOrder } from "./ai/tools/create-order";
 import type { getMarkets } from "./ai/tools/get-markets";
+import type { getPortfolio } from "./ai/tools/get-portfolio";
 import type { getPositions } from "./ai/tools/get-positions";
+import type { getTradeHistory } from "./ai/tools/get-trade-history";
 import type { requestSuggestions } from "./ai/tools/request-suggestions";
 import type { updateDocument } from "./ai/tools/update-document";
 import type { webSearch } from "./ai/tools/web-search";
@@ -22,6 +24,8 @@ export type MessageMetadata = z.infer<typeof messageMetadataSchema>;
 
 type getMarketsTool = InferUITool<ReturnType<typeof getMarkets>>;
 type getPositionsTool = InferUITool<ReturnType<typeof getPositions>>;
+type getPortfolioTool = InferUITool<ReturnType<typeof getPortfolio>>;
+type getTradeHistoryTool = InferUITool<ReturnType<typeof getTradeHistory>>;
 type createOrderTool = InferUITool<ReturnType<typeof createOrder>>;
 type cancelOrderTool = InferUITool<ReturnType<typeof cancelOrder>>;
 type webSearchTool = InferUITool<typeof webSearch>;
@@ -35,6 +39,8 @@ type requestSuggestionsTool = InferUITool<
 export type ChatTools = {
   getMarkets: getMarketsTool;
   getPositions: getPositionsTool;
+  getPortfolio: getPortfolioTool;
+  getTradeHistory: getTradeHistoryTool;
   createOrder: createOrderTool;
   cancelOrder: cancelOrderTool;
   webSearch: webSearchTool;

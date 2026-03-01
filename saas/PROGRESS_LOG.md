@@ -182,3 +182,40 @@
 - Single Supabase + Upstash instance for both dev and prod — acceptable for solo dev with no real users; separate dev project deferred to Phase 3+
 - Vercel MCP connector (OAuth) added but not surfacing in Claude Code session — connector system incompatible with Claude Code CLI; use Vercel dashboard directly
 - `proxy.ts` confirmed as Next.js 16's replacement for `middleware.ts` — was not in initial chatbot fork, caused the redirect loop bug
+
+---
+
+## 2026-03-01 — Phase 1 Closeout: getPortfolio + getTradeHistory
+
+**Phase:** 1.5 (Trading State) — completing remaining gaps
+
+### Changes
+
+**`getPortfolio` tool** (`lib/ai/tools/get-portfolio.ts`)
+- Fetches live Kalshi positions, balance, and market data in parallel
+- Cross-references Trade table for entry prices
+- Computes unrealized P&L per position (current bid vs entry price)
+- Returns portfolio summary with totals for unrealized and realized P&L
+
+**`getTradeHistory` tool** (`lib/ai/tools/get-trade-history.ts`)
+- Queries Trade table with configurable limit (1–100, default 20)
+- Optional status filter (open/closed/cancelled)
+- Returns trade details with entry/exit prices, P&L, strategy, notes
+- Includes summary counts by status and total realized P&L
+
+**Wiring**
+- Both tools registered in `app/(chat)/api/chat/route.ts` (imports, tools object, activeTools list)
+- Both tools typed in `lib/types.ts` (imports, InferUITool types, ChatTools union)
+
+### Files Created
+- `lib/ai/tools/get-portfolio.ts`
+- `lib/ai/tools/get-trade-history.ts`
+
+### Files Modified
+- `app/(chat)/api/chat/route.ts`
+- `lib/types.ts`
+
+### Decisions
+- `getPortfolio` fetches live market prices per position (accurate) — accepted the N+1 API call tradeoff; positions are typically <20, and `Promise.allSettled` handles failures gracefully
+- Position/Recommendation/Scan tables deferred — Trade table + Kalshi live API covers Phase 1 needs
+- **Phase 1 exit criteria: all met**
