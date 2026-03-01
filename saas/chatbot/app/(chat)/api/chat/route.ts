@@ -12,9 +12,15 @@ import { auth, type UserType } from "@/app/(auth)/auth";
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
 import { systemPrompt } from "@/lib/ai/prompts";
 import { getLanguageModel } from "@/lib/ai/providers";
+import { cancelOrder } from "@/lib/ai/tools/cancel-order";
 import { createDocument } from "@/lib/ai/tools/create-document";
+import { createOrder } from "@/lib/ai/tools/create-order";
+import { getMarkets } from "@/lib/ai/tools/get-markets";
+import { getPositions } from "@/lib/ai/tools/get-positions";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
 import { updateDocument } from "@/lib/ai/tools/update-document";
+import { webSearch } from "@/lib/ai/tools/web-search";
+import { xSearch } from "@/lib/ai/tools/x-search";
 import { isProductionEnvironment } from "@/lib/constants";
 import {
   createStreamId,
@@ -136,6 +142,12 @@ export async function POST(request: Request) {
           experimental_activeTools: isReasoningModel
             ? []
             : [
+                "getMarkets",
+                "getPositions",
+                "createOrder",
+                "cancelOrder",
+                "webSearch",
+                "xSearch",
                 "createDocument",
                 "updateDocument",
                 "requestSuggestions",
@@ -148,6 +160,12 @@ export async function POST(request: Request) {
               }
             : undefined,
           tools: {
+            getMarkets: getMarkets({ session }),
+            getPositions: getPositions({ session }),
+            createOrder: createOrder({ session }),
+            cancelOrder: cancelOrder({ session }),
+            webSearch,
+            xSearch,
             createDocument: createDocument({ session, dataStream }),
             updateDocument: updateDocument({ session, dataStream }),
             requestSuggestions: requestSuggestions({ session, dataStream }),
