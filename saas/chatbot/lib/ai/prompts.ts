@@ -68,18 +68,24 @@ export type RequestHints = {
 
 export const systemPrompt = ({
   selectedChatModel,
+  sessionContext,
 }: {
   selectedChatModel: string;
+  sessionContext?: string;
 }) => {
+  const base = sessionContext
+    ? `${regularPrompt}\n\n## Current session context\n${sessionContext}`
+    : regularPrompt;
+
   // reasoning models don't need artifacts prompt (they can't use tools)
   if (
     selectedChatModel.includes("reasoning") ||
     selectedChatModel.includes("thinking")
   ) {
-    return regularPrompt;
+    return base;
   }
 
-  return `${regularPrompt}\n\n${artifactsPrompt}`;
+  return `${base}\n\n${artifactsPrompt}`;
 };
 
 export const codePrompt = `

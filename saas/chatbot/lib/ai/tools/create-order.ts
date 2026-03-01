@@ -2,6 +2,7 @@ import { tool } from "ai";
 import type { Session } from "next-auth";
 import { z } from "zod";
 import { getKalshiClientForUser } from "@/lib/kalshi";
+import { logTrade } from "@/lib/db/queries";
 
 type CreateOrderProps = { session: Session };
 
@@ -62,6 +63,20 @@ Rules:
 
         const price = side === "yes" ? order.yes_price : order.no_price;
         const cost_cents = price * count;
+
+        // Auto-log the trade (fire-and-forget — don't fail the order on DB error)
+        logTrade({
+          userId: session.user.id,
+          orderId: order.order_id,
+          ticker: order.ticker,
+          side: order.side as "yes" | "no",
+          action: order.action as "buy" | "sell",
+          count: order.count,
+          priceCents: price,
+          totalCostCents: cost_cents,
+        }).catch(() => {
+          // Non-fatal
+        });
 
         return {
           success: true,

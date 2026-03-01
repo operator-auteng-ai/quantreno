@@ -29,6 +29,8 @@ import {
   type Suggestion,
   stream,
   suggestion,
+  trade,
+  type Trade,
   type User,
   user,
   vote,
@@ -679,5 +681,138 @@ export async function touchKalshiCredential({
       .where(eq(kalshiCredential.userId, userId));
   } catch (_error) {
     // Non-fatal — just a usage timestamp
+  }
+}
+
+// ─── Trade queries ────────────────────────────────────────────────────────────
+
+export async function logTrade({
+  userId,
+  orderId,
+  ticker,
+  side,
+  action,
+  count,
+  priceCents,
+  totalCostCents,
+  strategy,
+  notes,
+}: {
+  userId: string;
+  orderId: string;
+  ticker: string;
+  side: "yes" | "no";
+  action: "buy" | "sell";
+  count: number;
+  priceCents: number;
+  totalCostCents: number;
+  strategy?: string;
+  notes?: string;
+}): Promise<Trade> {
+  try {
+    const [row] = await db
+      .insert(trade)
+      .values({
+        userId,
+        orderId,
+        ticker,
+        side,
+        action,
+        count,
+        priceCents,
+        totalCostCents,
+        strategy: strategy ?? null,
+        notes: notes ?? null,
+        status: "open",
+      })
+      .returning();
+    return row;
+  } catch (_error) {
+    throw new ChatbotError("bad_request:database", "Failed to log trade");
+  }
+}
+
+export async function getOpenTradesByUserId({
+  userId,
+}: { userId: string }): Promise<Trade[]> {
+  try {
+    return await db
+      .select()
+      .from(trade)
+      .where(and(eq(trade.userId, userId), eq(trade.status, "open")))
+      .orderBy(desc(trade.createdAt));
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to retrieve open trades"
+    );
+  }
+}
+
+export async function getRecentTradesByUserId({
+  userId,
+  limit: limitArg = 20,
+}: {
+  userId: string;
+  limit?: number;
+}): Promise<Trade[]> {
+  try {
+    return await db
+      .select()
+      .from(trade)
+      .where(eq(trade.userId, userId))
+      .orderBy(desc(trade.createdAt))
+      .limit(limitArg);
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to retrieve trades"
+    );
+  }
+}
+
+export async function closeTradeByOrderId({
+  userId,
+  orderId,
+  exitPriceCents,
+  pnlCents,
+}: {
+  userId: string;
+  orderId: string;
+  exitPriceCents: number;
+  pnlCents: number;
+}): Promise<void> {
+  try {
+    await db
+      .update(trade)
+      .set({
+        status: "closed",
+        closedAt: new Date(),
+        exitPriceCents,
+        pnlCents,
+      })
+      .where(and(eq(trade.userId, userId), eq(trade.orderId, orderId)));
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to close trade"
+    );
+  }
+}
+
+export async function cancelTradeByOrderId({
+  userId,
+  orderId,
+}: {
+  userId: string;
+  orderId: string;
+}): Promise<void> {
+  try {
+    await db
+      .update(trade)
+      .set({ status: "cancelled" })
+      .where(and(eq(trade.userId, userId), eq(trade.orderId, orderId)));
+  } catch (_error) {
+    // Non-fatal — the order may not have been logged if approval was pending
   }
 }

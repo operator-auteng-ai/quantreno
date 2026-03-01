@@ -28,6 +28,7 @@ import {
   getChatById,
   getMessageCountByUserId,
   getMessagesByChatId,
+  getOpenTradesByUserId,
   saveChat,
   saveMessages,
   updateChatTitleById,
@@ -131,12 +132,27 @@ export async function POST(request: Request) {
 
     const modelMessages = await convertToModelMessages(uiMessages);
 
+    // Build session context: open trades from DB (non-blocking, best-effort)
+    let sessionContext: string | undefined;
+    try {
+      const openTrades = await getOpenTradesByUserId({ userId: session.user.id });
+      if (openTrades.length > 0) {
+        const lines = openTrades.map(
+          (t) =>
+            `- ${t.ticker}: ${t.action} ${t.count}x ${t.side} @ ${(t.priceCents / 100).toFixed(2)} (order ${t.orderId})`
+        );
+        sessionContext = `Open positions (${openTrades.length}):\n${lines.join("\n")}`;
+      }
+    } catch {
+      // Non-fatal — proceed without context
+    }
+
     const stream = createUIMessageStream({
       originalMessages: isToolApprovalFlow ? uiMessages : undefined,
       execute: async ({ writer: dataStream }) => {
         const result = streamText({
           model: getLanguageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel }),
+          system: systemPrompt({ selectedChatModel, sessionContext }),
           messages: modelMessages,
           stopWhen: stepCountIs(5),
           experimental_activeTools: isReasoningModel

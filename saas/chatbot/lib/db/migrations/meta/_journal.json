@@ -71,6 +71,13 @@
       "when": 1772378184012,
       "tag": "0009_sparkling_rocket_raccoon",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1772378792753,
+      "tag": "0010_lucky_doctor_faustus",
+      "breakpoints": true
     }
   ]
 }

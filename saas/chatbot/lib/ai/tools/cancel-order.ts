@@ -2,6 +2,7 @@ import { tool } from "ai";
 import type { Session } from "next-auth";
 import { z } from "zod";
 import { getKalshiClientForUser } from "@/lib/kalshi";
+import { cancelTradeByOrderId } from "@/lib/db/queries";
 
 type CancelOrderProps = { session: Session };
 
@@ -20,6 +21,14 @@ can be cancelled — already-filled orders cannot be reversed.`,
       try {
         const client = await getKalshiClientForUser(session.user.id);
         const { order } = await client.cancelOrder(order_id);
+
+        // Mark trade as cancelled in DB (fire-and-forget — non-fatal)
+        cancelTradeByOrderId({
+          userId: session.user.id,
+          orderId: order_id,
+        }).catch(() => {
+          // Non-fatal
+        });
 
         return {
           success: true,

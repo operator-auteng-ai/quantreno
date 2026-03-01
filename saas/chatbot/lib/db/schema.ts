@@ -2,6 +2,7 @@ import type { InferSelectModel } from "drizzle-orm";
 import {
   boolean,
   foreignKey,
+  integer,
   json,
   pgTable,
   primaryKey,
@@ -184,3 +185,28 @@ export const kalshiCredential = pgTable("KalshiCredential", {
 });
 
 export type KalshiCredential = InferSelectModel<typeof kalshiCredential>;
+
+export const trade = pgTable("Trade", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  userId: uuid("userId")
+    .notNull()
+    .references(() => user.id),
+  orderId: text("orderId").notNull(),
+  ticker: text("ticker").notNull(),
+  side: varchar("side", { enum: ["yes", "no"] }).notNull(),
+  action: varchar("action", { enum: ["buy", "sell"] }).notNull(),
+  count: integer("count").notNull(),
+  priceCents: integer("priceCents").notNull(),
+  totalCostCents: integer("totalCostCents").notNull(),
+  strategy: text("strategy"),
+  notes: text("notes"),
+  status: varchar("status", { enum: ["open", "closed", "cancelled"] })
+    .notNull()
+    .default("open"),
+  closedAt: timestamp("closedAt"),
+  exitPriceCents: integer("exitPriceCents"),
+  pnlCents: integer("pnlCents"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type Trade = InferSelectModel<typeof trade>;
