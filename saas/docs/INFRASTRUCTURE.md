@@ -80,7 +80,7 @@ Security: Vercel auto-injects `CRON_SECRET` as `Authorization: Bearer` header. R
 ### Domains
 
 ```
-Production: app.kalshiagent.com (or similar)
+Production: app.example.com (or similar)
 Preview: auto-generated per PR (*.vercel.app)
 ```
 
@@ -175,7 +175,7 @@ TLS: enabled
 
 ```
 Plan: Pay-as-you-go ($1/100K messages)
-Callback base URL: https://app.kalshiagent.com
+Callback base URL: https://app.example.com
 ```
 
 ### Usage
@@ -209,7 +209,7 @@ Trial: 7 days, full Standard access
 
 ### Webhooks
 
-Register webhook endpoint: `https://app.kalshiagent.com/api/webhooks/stripe`
+Register webhook endpoint: `https://app.example.com/api/webhooks/stripe`
 
 | Event | Action |
 |-------|--------|
@@ -234,8 +234,8 @@ Stripe Customer Portal for self-service:
 ### Setup
 
 ```
-Domain: kalshiagent.com (verify DNS)
-From address: alerts@kalshiagent.com
+Domain: example.com (verify DNS)
+From address: alerts@example.com
 Plan: Free (3,000 emails/mo) — upgrade when needed
 ```
 
