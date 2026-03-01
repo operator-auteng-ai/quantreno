@@ -77,6 +77,12 @@ export async function POST(request: Request) {
 
     const userType: UserType = session.user.type;
 
+    console.log("[chat] session", {
+      userId: session.user.id,
+      email: session.user.email,
+      type: userType,
+    });
+
     const messageCount = await getMessageCountByUserId({
       id: session.user.id,
       differenceInHours: 24,

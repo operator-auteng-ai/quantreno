@@ -22,6 +22,11 @@ export async function getKalshiClientForUser(
 ): Promise<ReturnType<typeof createKalshiClient>> {
   const row = await getKalshiCredentialByUserId({ userId });
 
+  console.log("[kalshi] getKalshiClientForUser lookup", {
+    userId,
+    found: !!row,
+  });
+
   if (!row) {
     throw new Error(
       "Kalshi account not connected. Please add your API key in Settings."

@@ -18,6 +18,12 @@ export async function GET() {
 
   const row = await getKalshiCredentialByUserId({ userId: session.user.id });
 
+  console.log("[credentials GET]", {
+    userId: session.user.id,
+    email: session.user.email,
+    found: !!row,
+  });
+
   if (!row) {
     return Response.json({ connected: false });
   }
