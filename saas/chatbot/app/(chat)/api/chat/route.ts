@@ -24,6 +24,11 @@ import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
 import { updateDocument } from "@/lib/ai/tools/update-document";
 import { webSearch } from "@/lib/ai/tools/web-search";
 import { xSearch } from "@/lib/ai/tools/x-search";
+import {
+  type ToolAuditEntry,
+  wrapTool,
+  TOOL_CONFIG,
+} from "@/lib/ai/tool-wrapper";
 import { isProductionEnvironment } from "@/lib/constants";
 import {
   createStreamId,
@@ -32,8 +37,10 @@ import {
   getMessageCountByUserId,
   getMessagesByChatId,
   getOpenTradesByUserId,
+  saveAiCall,
   saveChat,
   saveMessages,
+  saveToolCall,
   updateChatTitleById,
   updateMessage,
 } from "@/lib/db/queries";
@@ -157,6 +164,10 @@ export async function POST(request: Request) {
       // Non-fatal — proceed without context
     }
 
+    // Request-scoped audit queue — tools push entries, onStepFinish flushes
+    const toolAuditQueue: ToolAuditEntry[] = [];
+    let stepCounter = 0;
+
     const stream = createUIMessageStream({
       originalMessages: isToolApprovalFlow ? uiMessages : undefined,
       execute: async ({ writer: dataStream }) => {
@@ -188,21 +199,72 @@ export async function POST(request: Request) {
               }
             : undefined,
           tools: {
-            getMarkets: getMarkets({ session }),
-            getPositions: getPositions({ session }),
-            getPortfolio: getPortfolio({ session }),
-            getTradeHistory: getTradeHistory({ session }),
-            createOrder: createOrder({ session }),
-            cancelOrder: cancelOrder({ session }),
-            webSearch,
-            xSearch,
-            createDocument: createDocument({ session, dataStream }),
-            updateDocument: updateDocument({ session, dataStream }),
-            requestSuggestions: requestSuggestions({ session, dataStream }),
+            getMarkets: wrapTool("getMarkets", getMarkets({ session }), toolAuditQueue),
+            getPositions: wrapTool("getPositions", getPositions({ session }), toolAuditQueue),
+            getPortfolio: wrapTool("getPortfolio", getPortfolio({ session }), toolAuditQueue),
+            getTradeHistory: wrapTool("getTradeHistory", getTradeHistory({ session }), toolAuditQueue),
+            createOrder: wrapTool("createOrder", createOrder({ session }), toolAuditQueue),
+            cancelOrder: wrapTool("cancelOrder", cancelOrder({ session }), toolAuditQueue),
+            webSearch: wrapTool("webSearch", webSearch, toolAuditQueue),
+            xSearch: wrapTool("xSearch", xSearch, toolAuditQueue),
+            createDocument: wrapTool("createDocument", createDocument({ session, dataStream }), toolAuditQueue),
+            updateDocument: wrapTool("updateDocument", updateDocument({ session, dataStream }), toolAuditQueue),
+            requestSuggestions: wrapTool("requestSuggestions", requestSuggestions({ session, dataStream }), toolAuditQueue),
           },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,
             functionId: "stream-text",
+          },
+          onStepFinish: async (stepResult) => {
+            const currentStep = stepCounter++;
+
+            // Flush tool audit records for this step
+            const toolsInStep = toolAuditQueue.splice(0);
+            for (const entry of toolsInStep) {
+              saveToolCall({
+                userId: session.user.id,
+                chatId: id,
+                stepIndex: currentStep,
+                toolName: entry.toolName,
+                input: entry.input,
+                result: entry.fullResult,
+                resultChars: entry.resultChars,
+                summarized: entry.summarized,
+                summaryChars: entry.summaryChars,
+                durationMs: entry.durationMs,
+              }).catch(() => {});
+            }
+
+            // Record AI call audit
+            const usage = stepResult.usage;
+            saveAiCall({
+              userId: session.user.id,
+              chatId: id,
+              stepIndex: currentStep,
+              model: selectedChatModel,
+              inputTokens: usage.inputTokens ?? null,
+              outputTokens: usage.outputTokens ?? null,
+              totalTokens: usage.totalTokens ?? null,
+              cacheReadTokens:
+                (usage as any).inputTokenDetails?.cacheReadTokens ?? null,
+              cacheWriteTokens:
+                (usage as any).inputTokenDetails?.cacheWriteTokens ?? null,
+              reasoningTokens:
+                (usage as any).outputTokenDetails?.reasoningTokens ?? null,
+              toolCallCount: stepResult.toolCalls?.length ?? 0,
+              finishReason: stepResult.finishReason ?? null,
+            }).catch(() => {});
+
+            log.info("chat", "step finished", {
+              chatId: id,
+              step: currentStep,
+              model: selectedChatModel,
+              inputTokens: usage.inputTokens,
+              outputTokens: usage.outputTokens,
+              totalTokens: usage.totalTokens,
+              toolCalls: stepResult.toolCalls?.length ?? 0,
+              finishReason: stepResult.finishReason,
+            });
           },
         });
 

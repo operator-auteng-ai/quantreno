@@ -30,11 +30,13 @@ import {
   type Suggestion,
   stream,
   suggestion,
+  toolCall,
   trade,
   type Trade,
   type User,
   user,
   vote,
+  aiCall,
 } from "./schema";
 import { generateHashedPassword } from "./utils";
 
@@ -838,5 +840,64 @@ export async function cancelTradeByOrderId({
       .where(and(eq(trade.userId, userId), eq(trade.orderId, orderId)));
   } catch (_error) {
     // Non-fatal — the order may not have been logged if approval was pending
+  }
+}
+
+// ─── Audit queries ───────────────────────────────────────────────────────────
+
+export async function saveToolCall(params: {
+  userId: string;
+  chatId: string;
+  stepIndex: number;
+  toolName: string;
+  input: unknown;
+  result: unknown;
+  resultChars: number;
+  summarized: boolean;
+  summaryChars: number | null;
+  durationMs: number;
+}): Promise<void> {
+  try {
+    await db.insert(toolCall).values({
+      userId: params.userId,
+      chatId: params.chatId,
+      stepIndex: params.stepIndex,
+      toolName: params.toolName,
+      input: params.input as any,
+      result: params.result as any,
+      resultChars: params.resultChars,
+      summarized: params.summarized,
+      summaryChars: params.summaryChars,
+      durationMs: params.durationMs,
+    });
+  } catch (_error) {
+    log.warn("db", "failed to save tool call audit", {
+      toolName: params.toolName,
+      chatId: params.chatId,
+    });
+  }
+}
+
+export async function saveAiCall(params: {
+  userId: string;
+  chatId: string;
+  stepIndex: number;
+  model: string;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  totalTokens: number | null;
+  cacheReadTokens: number | null;
+  cacheWriteTokens: number | null;
+  reasoningTokens: number | null;
+  toolCallCount: number;
+  finishReason: string | null;
+}): Promise<void> {
+  try {
+    await db.insert(aiCall).values(params);
+  } catch (_error) {
+    log.warn("db", "failed to save AI call audit", {
+      model: params.model,
+      chatId: params.chatId,
+    });
   }
 }

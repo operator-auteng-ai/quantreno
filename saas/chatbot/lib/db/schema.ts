@@ -210,3 +210,49 @@ export const trade = pgTable("Trade", {
 });
 
 export type Trade = InferSelectModel<typeof trade>;
+
+// ─── Audit tables ─────────────────────────────────────────────────────────────
+
+export const toolCall = pgTable("ToolCall", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  userId: uuid("userId")
+    .notNull()
+    .references(() => user.id),
+  chatId: uuid("chatId")
+    .notNull()
+    .references(() => chat.id),
+  stepIndex: integer("stepIndex").notNull(),
+  toolName: varchar("toolName", { length: 64 }).notNull(),
+  input: json("input").notNull(),
+  result: json("result").notNull(),
+  resultChars: integer("resultChars").notNull(),
+  summarized: boolean("summarized").notNull().default(false),
+  summaryChars: integer("summaryChars"),
+  durationMs: integer("durationMs").notNull(),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type ToolCall = InferSelectModel<typeof toolCall>;
+
+export const aiCall = pgTable("AiCall", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  userId: uuid("userId")
+    .notNull()
+    .references(() => user.id),
+  chatId: uuid("chatId")
+    .notNull()
+    .references(() => chat.id),
+  stepIndex: integer("stepIndex").notNull(),
+  model: varchar("model", { length: 128 }).notNull(),
+  inputTokens: integer("inputTokens"),
+  outputTokens: integer("outputTokens"),
+  totalTokens: integer("totalTokens"),
+  cacheReadTokens: integer("cacheReadTokens"),
+  cacheWriteTokens: integer("cacheWriteTokens"),
+  reasoningTokens: integer("reasoningTokens"),
+  toolCallCount: integer("toolCallCount").notNull().default(0),
+  finishReason: varchar("finishReason", { length: 32 }),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+});
+
+export type AiCall = InferSelectModel<typeof aiCall>;
