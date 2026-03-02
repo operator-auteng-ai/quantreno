@@ -3,7 +3,7 @@ import { z } from "zod";
 
 /**
  * X (Twitter) API v2 recent tweet search.
- * Requires BEARER_TOKEN env var.
+ * Requires X_BEARER_TOKEN env var.
  * Searches tweets from the last 7 days (free tier limit).
  */
 
@@ -43,9 +43,9 @@ async function searchRecentTweets(
   query: string,
   options: { max_results?: number; sort_order?: "recency" | "relevancy" } = {}
 ): Promise<XSearchResponse> {
-  const bearerToken = process.env.BEARER_TOKEN;
+  const bearerToken = process.env.X_BEARER_TOKEN;
   if (!bearerToken) {
-    throw new Error("BEARER_TOKEN env var is required for X search");
+    throw new Error("X_BEARER_TOKEN env var is required for X search");
   }
 
   const params = new URLSearchParams({
