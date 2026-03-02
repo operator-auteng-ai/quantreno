@@ -48,6 +48,14 @@
   /* border radius unit */
   --radius: 0.5rem;
   --sidebar: hsl(0 0% 98%);
+
+  /* quantreno brand tokens */
+  --brand: hsl(230 80% 60%);
+  --brand-foreground: hsl(0 0% 100%);
+  --brand-muted: hsl(230 40% 92%);
+  --signal-profit: hsl(142 71% 45%);
+  --signal-loss: hsl(0 84% 60%);
+  --signal-neutral: hsl(240 3.8% 46.1%);
 }
 
 /* define design tokens (dark mode) */
@@ -85,6 +93,14 @@
   --sidebar-border: hsl(240 3.7% 15.9%);
   --sidebar-ring: hsl(217.2 91.2% 59.8%);
   --sidebar: hsl(240 5.9% 10%);
+
+  /* quantreno brand tokens */
+  --brand: hsl(230 80% 65%);
+  --brand-foreground: hsl(0 0% 100%);
+  --brand-muted: hsl(230 30% 20%);
+  --signal-profit: hsl(142 71% 45%);
+  --signal-loss: hsl(0 62.8% 30.6%);
+  --signal-neutral: hsl(240 5% 64.9%);
 }
 
 /* define theme */
@@ -131,6 +147,13 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-muted: var(--brand-muted);
+  --color-signal-profit: var(--signal-profit);
+  --color-signal-loss: var(--signal-loss);
+  --color-signal-neutral: var(--signal-neutral);
 
   --color-sidebar: var(--sidebar-background);
   --color-sidebar-foreground: var(--sidebar-foreground);

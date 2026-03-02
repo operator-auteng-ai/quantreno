@@ -149,7 +149,7 @@ export function SidebarHistory({ user }: { user: User | undefined }) {
         });
 
         if (isCurrentChat) {
-          router.replace("/");
+          router.replace("/chat");
           router.refresh();
         }
 
