@@ -57,7 +57,7 @@ current P&L, or to see which markets the user is already exposed to.`,
           _debug_raw_count: rawPositions.length,
           balance_cents: balanceData.balance,
           balance_dollars: (balanceData.balance / 100).toFixed(2),
-          positions: positions.map((p) => ({
+          positions: positions.map((p: any) => ({
             ticker: p.ticker,
             position: p.position, // positive = net yes, negative = net no
             side: p.position > 0 ? "yes" : "no",
