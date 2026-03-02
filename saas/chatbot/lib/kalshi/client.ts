@@ -97,6 +97,7 @@ async function kalshiFetch<T>(
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
+    cache: "no-store", // Never cache — trading data must always be live
   });
 
   if (!res.ok) {
