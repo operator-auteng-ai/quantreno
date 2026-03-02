@@ -23,11 +23,16 @@ export async function proxy(request: NextRequest) {
     secureCookie: !isDevelopmentEnvironment,
   });
 
+  // Public landing page — always accessible
+  if (pathname === "/") {
+    return NextResponse.next();
+  }
+
   const isAuthPage = pathname === "/login" || pathname === "/register";
 
   if (isAuthPage) {
     // Authenticated users don't need to see login/register
-    if (token) return NextResponse.redirect(new URL("/", request.url));
+    if (token) return NextResponse.redirect(new URL("/chat", request.url));
     return NextResponse.next();
   }
 
@@ -42,6 +47,7 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     "/",
+    "/chat",
     "/chat/:id",
     "/api/:path*",
     "/login",
