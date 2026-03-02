@@ -3,6 +3,7 @@ import type { Session } from "next-auth";
 import { z } from "zod";
 import { getOpenTradesByUserId } from "@/lib/db/queries";
 import { getKalshiClientForUser } from "@/lib/kalshi";
+import { log } from "@/lib/logger";
 
 type GetPortfolioProps = { session: Session };
 
@@ -120,7 +121,10 @@ Use when the user asks "how are my positions?", "what's my P&L?", or "portfolio 
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Failed to fetch portfolio";
-        console.error("[getPortfolio] Kalshi API error:", message, error);
+        log.error("getPortfolio", message, {
+          userId: session.user.id,
+          error: error instanceof Error ? error.stack : String(error),
+        });
         return {
           success: false,
           error: `KALSHI API ERROR: ${message}. The user should check Settings > Kalshi Account.`,

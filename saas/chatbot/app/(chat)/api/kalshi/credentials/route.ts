@@ -7,6 +7,7 @@ import {
 } from "@/lib/db/queries";
 import { encrypt } from "@/lib/kalshi/encrypt";
 import { createKalshiClient } from "@/lib/kalshi/client";
+import { log } from "@/lib/logger";
 import { z } from "zod";
 
 // GET /api/kalshi/credentials — returns connection status + balance if connected
@@ -18,9 +19,8 @@ export async function GET() {
 
   const row = await getKalshiCredentialByUserId({ userId: session.user.id });
 
-  console.log("[credentials GET]", {
+  log.info("credentials", "GET", {
     userId: session.user.id,
-    email: session.user.email,
     found: !!row,
   });
 
@@ -77,6 +77,11 @@ export async function POST(request: Request) {
       privateKeyEncrypted,
     });
 
+    log.info("credentials", "saved", {
+      userId: session.user.id,
+      balance: balance.balance,
+    });
+
     return Response.json({
       connected: true,
       balance: balance.balance, // cents — lets UI show "connected ($X.XX balance)"
@@ -84,6 +89,10 @@ export async function POST(request: Request) {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Connection failed";
+    log.error("credentials", "save failed", {
+      userId: session.user.id,
+      error: message,
+    });
     return Response.json(
       { error: `Kalshi connection failed: ${message}` },
       { status: 422 }
@@ -99,5 +108,6 @@ export async function DELETE() {
   }
 
   await deleteKalshiCredential({ userId: session.user.id });
+  log.info("credentials", "deleted", { userId: session.user.id });
   return Response.json({ connected: false });
 }

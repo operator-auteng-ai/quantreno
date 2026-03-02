@@ -3,6 +3,7 @@ import {
   getKalshiCredentialByUserId,
   touchKalshiCredential,
 } from "@/lib/db/queries";
+import { log } from "@/lib/logger";
 import { createKalshiClient } from "./client";
 import { decrypt } from "./encrypt";
 
@@ -22,12 +23,8 @@ export async function getKalshiClientForUser(
 ): Promise<ReturnType<typeof createKalshiClient>> {
   const row = await getKalshiCredentialByUserId({ userId });
 
-  console.log("[kalshi] getKalshiClientForUser lookup", {
-    userId,
-    found: !!row,
-  });
-
   if (!row) {
+    log.warn("kalshi", "no credentials found", { userId });
     throw new Error(
       "Kalshi account not connected. Please add your API key in Settings."
     );
@@ -39,11 +36,10 @@ export async function getKalshiClientForUser(
     apiKey = decrypt(row.apiKeyEncrypted);
     privateKeyPem = decrypt(row.privateKeyEncrypted);
   } catch (err) {
-    console.error(
-      "[kalshi] Failed to decrypt credentials for user",
+    log.error("kalshi", "credential decrypt failed", {
       userId,
-      err
-    );
+      error: err instanceof Error ? err.message : String(err),
+    });
     throw new Error(
       "Failed to decrypt Kalshi credentials. Please re-enter them in Settings."
     );

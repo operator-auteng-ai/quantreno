@@ -17,6 +17,7 @@ import postgres from "postgres";
 import type { ArtifactKind } from "@/components/artifact";
 import type { VisibilityType } from "@/components/visibility-selector";
 import { ChatbotError } from "../errors";
+import { log } from "../logger";
 import { generateUUID } from "../utils";
 import {
   type Chat,
@@ -552,7 +553,7 @@ export async function updateChatTitleById({
   try {
     return await db.update(chat).set({ title }).where(eq(chat.id, chatId));
   } catch (error) {
-    console.warn("Failed to update title for chat", chatId, error);
+    log.warn("db", "failed to update chat title", { chatId, error: error instanceof Error ? error.message : String(error) });
     return;
   }
 }

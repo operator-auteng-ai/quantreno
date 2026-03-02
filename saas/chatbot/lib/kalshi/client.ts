@@ -1,5 +1,6 @@
 import "server-only";
 import * as crypto from "node:crypto";
+import { log } from "@/lib/logger";
 import type {
   CreateOrderParams,
   GetEventsParams,
@@ -107,10 +108,11 @@ async function kalshiFetch<T>(
     } catch {
       // ignore parse errors
     }
-    console.error(
-      `[kalshi] ${method} ${path} → ${res.status}`,
-      errorData ?? res.statusText
-    );
+    log.error("kalshi", `${method} ${path} → ${res.status}`, {
+      status: res.status,
+      code: errorData?.code,
+      message: errorData?.message ?? res.statusText,
+    });
     throw new KalshiError(
       res.status,
       errorData?.code ?? "unknown",

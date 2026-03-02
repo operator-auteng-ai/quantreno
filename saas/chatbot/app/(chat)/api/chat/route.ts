@@ -10,6 +10,7 @@ import { after } from "next/server";
 import { createResumableStreamContext } from "resumable-stream";
 import { auth, type UserType } from "@/app/(auth)/auth";
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
+import { log } from "@/lib/logger";
 import { systemPrompt } from "@/lib/ai/prompts";
 import { getLanguageModel } from "@/lib/ai/providers";
 import { cancelOrder } from "@/lib/ai/tools/cancel-order";
@@ -77,10 +78,9 @@ export async function POST(request: Request) {
 
     const userType: UserType = session.user.type;
 
-    console.log("[chat] session", {
+    log.info("chat", "request", {
       userId: session.user.id,
-      email: session.user.email,
-      type: userType,
+      model: selectedChatModel,
     });
 
     const messageCount = await getMessageCountByUserId({
@@ -292,7 +292,10 @@ export async function POST(request: Request) {
       return new ChatbotError("bad_request:activate_gateway").toResponse();
     }
 
-    console.error("Unhandled error in chat API:", error, { vercelId });
+    log.error("chat", "unhandled error", {
+      error: error instanceof Error ? error.message : String(error),
+      vercelId,
+    });
     return new ChatbotError("offline:chat").toResponse();
   }
 }
