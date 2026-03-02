@@ -35,16 +35,26 @@ current P&L, or to see which markets the user is already exposed to.`,
             : Promise.resolve({ orders: [] }),
         ]);
 
+        // Debug: surface raw response shape so we can diagnose mismatches
+        const rawKeys = Object.keys(positionsData);
+        const rawPositions = (positionsData as any).positions
+          ?? (positionsData as any).market_positions
+          ?? (positionsData as any).event_positions
+          ?? (positionsData as any).market_exposures
+          ?? [];
         console.log(
-          "[getPositions] raw positions response:",
-          JSON.stringify(positionsData).slice(0, 500)
+          "[getPositions] raw response keys:", rawKeys,
+          "positions count:", rawPositions.length,
+          "sample:", JSON.stringify(rawPositions[0] ?? {}).slice(0, 200)
         );
 
-        const positions = (positionsData.positions ?? []).filter(
-          (p) => p.position !== 0
+        const positions = rawPositions.filter(
+          (p: any) => p.position !== 0
         );
 
         return {
+          _debug_response_keys: rawKeys,
+          _debug_raw_count: rawPositions.length,
           balance_cents: balanceData.balance,
           balance_dollars: (balanceData.balance / 100).toFixed(2),
           positions: positions.map((p) => ({
