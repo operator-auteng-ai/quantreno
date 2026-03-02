@@ -26,11 +26,19 @@ current P&L, or to see which markets the user is already exposed to.`,
 
         const [balanceData, positionsData, ordersData] = await Promise.all([
           client.getBalance(),
-          client.getPositions({ ticker, settlement_status: "unsettled" }),
+          client.getPositions({
+            ticker,
+            count_filter: "position",
+          }),
           include_orders
             ? client.getOrders({ status: "resting", ticker })
             : Promise.resolve({ orders: [] }),
         ]);
+
+        console.log(
+          "[getPositions] raw positions response:",
+          JSON.stringify(positionsData).slice(0, 500)
+        );
 
         const positions = (positionsData.positions ?? []).filter(
           (p) => p.position !== 0
@@ -44,8 +52,8 @@ current P&L, or to see which markets the user is already exposed to.`,
             position: p.position, // positive = net yes, negative = net no
             side: p.position > 0 ? "yes" : "no",
             contracts: Math.abs(p.position),
-            realized_pnl_cents: p.realized_pnl,
-            market_exposure_cents: p.market_exposure,
+            realized_pnl_cents: p.realized_pnl_cents,
+            market_exposure_cents: p.market_exposure_cents,
           })),
           resting_orders: ordersData.orders.map((o) => ({
             order_id: o.order_id,

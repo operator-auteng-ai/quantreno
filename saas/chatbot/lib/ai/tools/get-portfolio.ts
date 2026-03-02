@@ -25,7 +25,6 @@ Use when the user asks "how are my positions?", "what's my P&L?", or "portfolio 
           client.getBalance(),
           client.getPositions({
             ticker,
-            settlement_status: "unsettled",
             count_filter: "position",
           }),
           getOpenTradesByUserId({ userId: session.user.id }),
@@ -94,8 +93,8 @@ Use when the user asks "how are my positions?", "what's my P&L?", or "portfolio 
               unrealizedPnlCents !== null
                 ? (unrealizedPnlCents / 100).toFixed(2)
                 : null,
-            realized_pnl_cents: p.realized_pnl,
-            market_exposure_cents: p.market_exposure,
+            realized_pnl_cents: p.realized_pnl_cents,
+            market_exposure_cents: p.market_exposure_cents,
           };
         });
 

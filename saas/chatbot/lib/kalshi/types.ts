@@ -75,13 +75,17 @@ export interface KalshiBalance {
 
 export interface KalshiPosition {
   ticker: string;
-  event_ticker: string;
-  market_exposure: number; // cents
+  event_ticker?: string;
+  market_exposure_cents: number;
+  market_exposure_dollars: string;
   position: number; // signed: positive = net yes, negative = net no
   resting_orders_count: number;
-  realized_pnl: number; // cents
-  total_traded: number; // cents
-  fees_paid: number; // cents
+  realized_pnl_cents: number;
+  realized_pnl_dollars: string;
+  total_traded_cents: number;
+  total_traded_dollars: string;
+  fees_paid_cents: number;
+  fees_paid_dollars: string;
 }
 
 export interface KalshiOrder {
