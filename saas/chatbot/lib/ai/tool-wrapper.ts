@@ -35,51 +35,61 @@ interface ToolWrapConfig {
 
 export const TOOL_CONFIG: Record<string, ToolWrapConfig> = {
   webSearch: {
-    summarizeAbove: 3_000,
-    maxChars: 8_000,
+    summarizeAbove: 3000,
+    maxChars: 8000,
     promptHint:
       "news/research results — keep headlines, key facts, dates, and source URLs",
   },
   xSearch: {
-    summarizeAbove: 3_000,
-    maxChars: 8_000,
+    summarizeAbove: 3000,
+    maxChars: 8000,
     promptHint:
       "tweets — keep sentiment, key opinions, notable authors, engagement counts",
   },
   getMarkets: {
-    summarizeAbove: 4_000,
+    summarizeAbove: 4000,
     maxChars: 10_000,
     promptHint:
       "market listings — keep tickers, titles, yes/no prices, volume, close dates",
   },
   getPositions: {
-    summarizeAbove: 3_000,
-    maxChars: 6_000,
+    summarizeAbove: 3000,
+    maxChars: 6000,
     promptHint:
       "portfolio positions — keep ALL tickers, sides, contract counts, P&L",
   },
   getPortfolio: {
-    summarizeAbove: 3_000,
-    maxChars: 6_000,
+    summarizeAbove: 3000,
+    maxChars: 6000,
     promptHint:
       "portfolio summary — keep balance, ALL position details, total P&L",
   },
   getTradeHistory: {
-    summarizeAbove: 3_000,
-    maxChars: 6_000,
+    summarizeAbove: 3000,
+    maxChars: 6000,
     promptHint: "trade history — keep dates, tickers, sides, P&L per trade",
   },
+  // Strategy tools
+  listStrategies: {
+    summarizeAbove: 3000,
+    maxChars: 6000,
+    promptHint:
+      "strategy list — keep ALL strategy names, playbooks, budgets, statuses, open position counts",
+  },
   // Small-response tools — no summarization, just safety cap
-  createOrder: { maxChars: 2_000 },
-  cancelOrder: { maxChars: 2_000 },
-  createDocument: { maxChars: 2_000 },
-  updateDocument: { maxChars: 2_000 },
-  requestSuggestions: { maxChars: 2_000 },
+  createOrder: { maxChars: 2000 },
+  cancelOrder: { maxChars: 2000 },
+  createStrategy: { maxChars: 2000 },
+  updateStrategy: { maxChars: 2000 },
+  createDocument: { maxChars: 2000 },
+  updateDocument: { maxChars: 2000 },
+  requestSuggestions: { maxChars: 2000 },
 };
 
 // ─── Summarizer ──────────────────────────────────────────────────────────────
 
-const SUMMARIZER_SYSTEM = `You are a data summarizer for a trading assistant. Distill the following tool output into a concise summary preserving all actionable data points. Keep tickers, prices, dates, sentiment, and key metrics. Output plain text, no markdown headers. No preamble.`;
+const SUMMARIZER_SYSTEM =
+  "You are a data summarizer for a trading assistant. Distill the following tool output into a concise summary preserving all actionable data points. Keep tickers, prices, dates, sentiment, and key metrics. Output plain text, no markdown headers. No preamble.";
 
 async function summarizeResult(
   toolName: string,
@@ -99,7 +109,7 @@ async function summarizeResult(
       error: err instanceof Error ? err.message : String(err),
     });
     // Fallback: hard truncate
-    return json.slice(0, 4_000) + "\n...[truncated]";
+    return `${json.slice(0, 4000)}\n...[truncated]`;
   }
 }
 
@@ -118,13 +128,15 @@ export function wrapTool<T extends Tool>(
   auditQueue: ToolAuditEntry[],
   config?: ToolWrapConfig
 ): T {
-  const cfg = config ?? TOOL_CONFIG[toolName] ?? { maxChars: 4_000 };
+  const cfg = config ?? TOOL_CONFIG[toolName] ?? { maxChars: 4000 };
 
   // Clone tool and override execute
   const wrapped = { ...tool } as T;
 
   const originalExecute = tool.execute;
-  if (!originalExecute) return tool; // no execute = nothing to wrap
+  if (!originalExecute) {
+    return tool; // no execute = nothing to wrap
+  }
 
   wrapped.execute = async (args: any, execOptions: any) => {
     const startMs = Date.now();
@@ -139,7 +151,11 @@ export function wrapTool<T extends Tool>(
     let returnValue: unknown = fullResult;
 
     // Phase 1: Summarize if large and config allows
-    if (cfg.summarizeAbove && resultChars > cfg.summarizeAbove && cfg.promptHint) {
+    if (
+      cfg.summarizeAbove &&
+      resultChars > cfg.summarizeAbove &&
+      cfg.promptHint
+    ) {
       const summary = await summarizeResult(toolName, fullJson, cfg.promptHint);
       summarized = true;
       summaryChars = summary.length;
@@ -155,10 +171,12 @@ export function wrapTool<T extends Tool>(
     // Phase 2: Hard cap safety net
     const returnJson = JSON.stringify(returnValue);
     if (returnJson.length > cfg.maxChars) {
-      const truncated = returnJson.slice(0, cfg.maxChars) + "...[truncated]";
+      const truncated = `${returnJson.slice(0, cfg.maxChars)}...[truncated]`;
       returnValue = { _truncated: true, data: truncated };
       summaryChars = truncated.length;
-      if (!summarized) summarized = true; // mark as modified
+      if (!summarized) {
+        summarized = true; // mark as modified
+      }
 
       log.warn("tool-wrapper", "hard-capped", {
         toolName,

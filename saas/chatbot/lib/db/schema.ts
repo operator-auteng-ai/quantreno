@@ -16,6 +16,12 @@ export const user = pgTable("User", {
   id: uuid("id").primaryKey().notNull().defaultRandom(),
   email: varchar("email", { length: 64 }).notNull(),
   password: varchar("password", { length: 64 }),
+  // Account-level risk fields (Phase 2)
+  allocatedCapitalCents: integer("allocatedCapitalCents"),
+  maxExposurePct: integer("maxExposurePct").default(60),
+  dailyLossLimitCents: integer("dailyLossLimitCents"),
+  drawdownPausePct: integer("drawdownPausePct").default(20),
+  maxCorrelatedTrades: integer("maxCorrelatedTrades").default(3),
 });
 
 export type User = InferSelectModel<typeof user>;
@@ -172,6 +178,40 @@ export type Stream = InferSelectModel<typeof stream>;
 
 // ─── Trading tables ───────────────────────────────────────────────────────────
 
+export const strategy = pgTable("Strategy", {
+  id: uuid("id").primaryKey().notNull().defaultRandom(),
+  userId: uuid("userId")
+    .notNull()
+    .references(() => user.id),
+  name: varchar("name", { length: 128 }).notNull(),
+  playbook: varchar("playbook", {
+    enum: [
+      "event_driven",
+      "relative_value",
+      "tail_risk",
+      "momentum",
+      "mean_reversion",
+      "macro_thematic",
+    ],
+  }).notNull(),
+  instrumentType: varchar("instrumentType", {
+    enum: ["prediction_market", "options", "crypto"],
+  })
+    .notNull()
+    .default("prediction_market"),
+  budgetCents: integer("budgetCents").notNull(),
+  config: json("config").notNull().default({}),
+  status: varchar("status", {
+    enum: ["active", "paused", "archived"],
+  })
+    .notNull()
+    .default("active"),
+  createdAt: timestamp("createdAt").notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt").notNull().defaultNow(),
+});
+
+export type Strategy = InferSelectModel<typeof strategy>;
+
 export const kalshiCredential = pgTable("KalshiCredential", {
   id: uuid("id").primaryKey().notNull().defaultRandom(),
   userId: uuid("userId")
@@ -191,6 +231,7 @@ export const trade = pgTable("Trade", {
   userId: uuid("userId")
     .notNull()
     .references(() => user.id),
+  strategyId: uuid("strategyId").references(() => strategy.id),
   orderId: text("orderId").notNull(),
   ticker: text("ticker").notNull(),
   side: varchar("side", { enum: ["yes", "no"] }).notNull(),

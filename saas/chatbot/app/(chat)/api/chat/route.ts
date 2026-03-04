@@ -16,12 +16,15 @@ import { getLanguageModel } from "@/lib/ai/providers";
 import { cancelOrder } from "@/lib/ai/tools/cancel-order";
 import { createDocument } from "@/lib/ai/tools/create-document";
 import { createOrder } from "@/lib/ai/tools/create-order";
+import { createStrategy } from "@/lib/ai/tools/create-strategy";
 import { getMarkets } from "@/lib/ai/tools/get-markets";
 import { getPortfolio } from "@/lib/ai/tools/get-portfolio";
 import { getPositions } from "@/lib/ai/tools/get-positions";
 import { getTradeHistory } from "@/lib/ai/tools/get-trade-history";
+import { listStrategies } from "@/lib/ai/tools/list-strategies";
 import { requestSuggestions } from "@/lib/ai/tools/request-suggestions";
 import { updateDocument } from "@/lib/ai/tools/update-document";
+import { updateStrategy } from "@/lib/ai/tools/update-strategy";
 import { webSearch } from "@/lib/ai/tools/web-search";
 import { xSearch } from "@/lib/ai/tools/x-search";
 import {
@@ -33,6 +36,7 @@ import { isProductionEnvironment } from "@/lib/constants";
 import {
   createStreamId,
   deleteChatById,
+  getActiveStrategiesByUserId,
   getChatById,
   getMessageCountByUserId,
   getMessagesByChatId,
@@ -147,18 +151,38 @@ export async function POST(request: Request) {
 
     const modelMessages = await convertToModelMessages(uiMessages);
 
-    // Build session context: open trades from DB (non-blocking, best-effort)
+    // Build session context: strategies + open trades (non-blocking, best-effort)
     let sessionContext: string | undefined;
     try {
-      const openTrades = await getOpenTradesByUserId({
-        userId: session.user.id,
-      });
-      if (openTrades.length > 0) {
-        const lines = openTrades.map(
-          (t) =>
-            `- ${t.ticker}: ${t.action} ${t.count}x ${t.side} @ ${(t.priceCents / 100).toFixed(2)} (order ${t.orderId})`
+      const [openTrades, activeStrategies] = await Promise.all([
+        getOpenTradesByUserId({ userId: session.user.id }),
+        getActiveStrategiesByUserId({ userId: session.user.id }),
+      ]);
+
+      const parts: string[] = [];
+
+      if (activeStrategies.length > 0) {
+        const stratLines = activeStrategies.map(
+          (s) =>
+            `- "${s.name}" (${s.playbook}, $${(s.budgetCents / 100).toFixed(2)} budget, ${s.status})`
         );
-        sessionContext = `Open positions (${openTrades.length}):\n${lines.join("\n")}`;
+        parts.push(
+          `Active strategies (${activeStrategies.length}):\n${stratLines.join("\n")}`
+        );
+      }
+
+      if (openTrades.length > 0) {
+        const tradeLines = openTrades.map(
+          (t) =>
+            `- ${t.ticker}: ${t.action} ${t.count}x ${t.side} @ ${(t.priceCents / 100).toFixed(2)} (order ${t.orderId})${t.strategyId ? ` [strategy: ${t.strategyId}]` : ""}`
+        );
+        parts.push(
+          `Open positions (${openTrades.length}):\n${tradeLines.join("\n")}`
+        );
+      }
+
+      if (parts.length > 0) {
+        sessionContext = parts.join("\n\n");
       }
     } catch {
       // Non-fatal — proceed without context
@@ -185,6 +209,9 @@ export async function POST(request: Request) {
                 "getTradeHistory",
                 "createOrder",
                 "cancelOrder",
+                "listStrategies",
+                "createStrategy",
+                "updateStrategy",
                 "webSearch",
                 "xSearch",
                 "createDocument",
@@ -205,6 +232,9 @@ export async function POST(request: Request) {
             getTradeHistory: wrapTool("getTradeHistory", getTradeHistory({ session }), toolAuditQueue),
             createOrder: wrapTool("createOrder", createOrder({ session }), toolAuditQueue),
             cancelOrder: wrapTool("cancelOrder", cancelOrder({ session }), toolAuditQueue),
+            listStrategies: wrapTool("listStrategies", listStrategies({ session }), toolAuditQueue),
+            createStrategy: wrapTool("createStrategy", createStrategy({ session }), toolAuditQueue),
+            updateStrategy: wrapTool("updateStrategy", updateStrategy({ session }), toolAuditQueue),
             webSearch: wrapTool("webSearch", webSearch, toolAuditQueue),
             xSearch: wrapTool("xSearch", xSearch, toolAuditQueue),
             createDocument: wrapTool("createDocument", createDocument({ session, dataStream }), toolAuditQueue),

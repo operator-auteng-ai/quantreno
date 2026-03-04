@@ -2,16 +2,26 @@
 
 ## Active Phase
 
-**Phase 2: Portfolio & Strategies** — Ready to start
+**Phase 2: Portfolio & Strategies** — 2.1 complete, pick up at 2.2 or 2.3
 
 ## What Was Completed
 
-### Product Redesign (2026-03-03, branch: `ph3`)
-- 6 Playbooks replacing 4 ad-hoc strategies (Event-Driven, Relative Value, Tail Risk, Momentum, Mean Reversion, Macro Thematic)
+### Phase 2.1 — Strategy Schema & CRUD (2026-03-03, branch: `ph2`)
+- Strategy table with Drizzle schema, FK on Trade, 5 account-level risk fields on User
+- Migration: `0012_oval_george_stacy.sql`
+- 6 playbook Zod schemas with base config + playbook-specific extensions (`lib/ai/strategies/playbook-schemas.ts`)
+- `validateStrategyConfig()` and `getDefaultConfig()` helpers
+- 6 DB query functions: `getStrategiesByUserId`, `getStrategyById`, `createStrategy`, `updateStrategy`, `getActiveStrategiesByUserId`, `getStrategyTradeStats`
+- 3 AI tools: `listStrategies`, `createStrategy`, `updateStrategy` — registered in route, wrapper config, type exports
+- Session context updated to inject active strategies alongside open trades
+- System prompt updated with 6 playbooks and strategy management guidance
+- 36 unit tests across 4 test files (playbook schemas, list/create/update tools) — all passing
+- Full suite: 132/132 tests green, tsc clean, lint clean, build passes
+
+### Product Redesign (2026-03-03, merged to main)
+- 6 Playbooks replacing 4 ad-hoc strategies
 - Account → Strategy → Trade portfolio model
 - Two-layer risk engine (strategy-level + account-level)
-- Theme→Strategy, Archetype→Playbook naming
-- Compute & Finance architecture: `lib/finance/` interface boundary, V2 Python path, AWS+Terraform option
 - All docs rewritten: VISION.md, ARCH.md, PLAN.md, TAXONOMY.md
 
 ### Phase 0 Infrastructure (2026-03-01)
@@ -27,14 +37,7 @@
 
 ---
 
-## Phase 2 Scope
-
-> See `docs/PLAN.md` Phase 2 for full breakdown.
-
-### 2.1 — Strategy Schema & CRUD
-- Strategy table (Drizzle schema + migration)
-- `listStrategies`, `createStrategy`, `updateStrategy` AI tools
-- Strategy config validation per playbook
+## Next Up
 
 ### 2.2 — Playbook Engine
 - Playbook pipeline interface: `scan → research → rank → size → riskCheck → recommend`
@@ -61,9 +64,4 @@
 
 ## Blockers
 
-- `ph3` branch needs to merge to `main` before Phase 2 implementation starts
-
-## Decisions Pending
-
-- Phase 2 sub-phase ordering: start with 2.1 (schema) or 2.3 (lib/finance) first?
-- Which playbook to implement first after Event-Driven?
+None.

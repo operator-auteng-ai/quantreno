@@ -27,6 +27,8 @@ import {
   kalshiCredential,
   type KalshiCredential,
   message,
+  strategy,
+  type Strategy,
   type Suggestion,
   stream,
   suggestion,
@@ -840,6 +842,152 @@ export async function cancelTradeByOrderId({
       .where(and(eq(trade.userId, userId), eq(trade.orderId, orderId)));
   } catch (_error) {
     // Non-fatal — the order may not have been logged if approval was pending
+  }
+}
+
+// ─── Strategy queries ────────────────────────────────────────────────────────
+
+export async function getStrategiesByUserId({
+  userId,
+  status,
+}: {
+  userId: string;
+  status?: "active" | "paused" | "archived";
+}): Promise<Strategy[]> {
+  try {
+    const conditions = [eq(strategy.userId, userId)];
+    if (status) {
+      conditions.push(eq(strategy.status, status));
+    }
+    return await db
+      .select()
+      .from(strategy)
+      .where(and(...conditions))
+      .orderBy(desc(strategy.createdAt));
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to get strategies"
+    );
+  }
+}
+
+export async function getStrategyById({
+  id,
+  userId,
+}: {
+  id: string;
+  userId: string;
+}): Promise<Strategy | null> {
+  try {
+    const [row] = await db
+      .select()
+      .from(strategy)
+      .where(and(eq(strategy.id, id), eq(strategy.userId, userId)))
+      .limit(1);
+    return row ?? null;
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to get strategy"
+    );
+  }
+}
+
+export async function createStrategy({
+  userId,
+  name,
+  playbook,
+  instrumentType,
+  budgetCents,
+  config,
+}: {
+  userId: string;
+  name: string;
+  playbook: string;
+  instrumentType: string;
+  budgetCents: number;
+  config: Record<string, unknown>;
+}): Promise<Strategy> {
+  try {
+    const [row] = await db
+      .insert(strategy)
+      .values({
+        userId,
+        name,
+        playbook: playbook as Strategy["playbook"],
+        instrumentType: instrumentType as Strategy["instrumentType"],
+        budgetCents,
+        config,
+        status: "active",
+      })
+      .returning();
+    return row;
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to create strategy"
+    );
+  }
+}
+
+export async function updateStrategy({
+  id,
+  userId,
+  updates,
+}: {
+  id: string;
+  userId: string;
+  updates: Partial<{
+    name: string;
+    budgetCents: number;
+    config: Record<string, unknown>;
+    status: string;
+  }>;
+}): Promise<Strategy | null> {
+  try {
+    const setValues: Record<string, unknown> = {
+      ...updates,
+      updatedAt: new Date(),
+    };
+    const [row] = await db
+      .update(strategy)
+      .set(setValues)
+      .where(and(eq(strategy.id, id), eq(strategy.userId, userId)))
+      .returning();
+    return row ?? null;
+  } catch (_error) {
+    throw new ChatbotError(
+      "bad_request:database",
+      "Failed to update strategy"
+    );
+  }
+}
+
+export async function getActiveStrategiesByUserId({
+  userId,
+}: { userId: string }): Promise<Strategy[]> {
+  return getStrategiesByUserId({ userId, status: "active" });
+}
+
+export async function getStrategyTradeStats({
+  userId,
+}: { userId: string }): Promise<
+  Array<{ strategyId: string | null; openCount: number }>
+> {
+  try {
+    const rows = await db
+      .select({
+        strategyId: trade.strategyId,
+        openCount: count(trade.id),
+      })
+      .from(trade)
+      .where(and(eq(trade.userId, userId), eq(trade.status, "open")))
+      .groupBy(trade.strategyId);
+
+    return rows;
+  } catch (_error) {
+    return [];
   }
 }
 

@@ -268,3 +268,76 @@ Stepped back before Phase 2 to rethink the product at a fundamental level. The 4
 - **`lib/finance/` interface boundary** — pure functions with no awareness of implementation. V2 swaps bodies to HTTP calls. No app code changes.
 - **AWS+Terraform as V2 option** — don't decide now, ship V1 on Vercel, evaluate after traction
 - **Multi-instrument architecture ready but not implemented** — `instrumentType` enum on Strategy, `exchange` on Trade/Position. V1 = `prediction_market` only.
+
+
+---
+
+## 2026-03-03 — Phase 2.1: Strategy Schema & CRUD
+
+**Phase:** 2.1 (Strategy Schema & CRUD)
+
+
+### Changes
+
+**Playbook Config Schemas** (`lib/ai/strategies/playbook-schemas.ts`)
+- 6 Zod schemas: base config (filters, entryRules, exitRules, sizing, research, thesisTemplate) + playbook-specific extensions
+- `validateStrategyConfig()` — validates config JSON against the appropriate playbook schema
+- `getDefaultConfig()` — returns fully populated defaults for a playbook
+- Exports: `PLAYBOOK_VALUES`, `INSTRUMENT_TYPE_VALUES`, `STRATEGY_STATUS_VALUES` enums
+
+**Database Schema & Migration**
+- Added `Strategy` table to `lib/db/schema.ts` (id, userId FK, name, playbook enum, instrumentType enum, budgetCents, config JSON, status enum, timestamps)
+- Added `strategyId` nullable FK on `Trade` table (backward-compatible with Phase 1 trades)
+- Added 5 account-level risk fields to `User` table (allocatedCapitalCents, maxExposurePct, dailyLossLimitCents, drawdownPausePct, maxCorrelatedTrades)
+- Migration: `0012_oval_george_stacy.sql`
+
+**Query Functions** (`lib/db/queries.ts`)
+- `getStrategiesByUserId` — with optional status filter
+- `getStrategyById` — scoped to userId
+- `createStrategy` — with config JSON
+- `updateStrategy` — partial updates with updatedAt bump
+- `getActiveStrategiesByUserId` — convenience wrapper
+- `getStrategyTradeStats` — open trade counts grouped by strategyId
+
+**AI Tools**
+- `listStrategies` — enriches strategies with trade stats (open position counts)
+- `createStrategy` — merges user config with playbook defaults, validates, creates
+- `updateStrategy` — fetches existing, merges config, validates, updates
+- All 3 registered in route.ts (tools, activeTools), tool-wrapper.ts (TOOL_CONFIG), types.ts (ChatTools)
+
+**Session Context & Prompt**
+- Chat route fetches active strategies in parallel with open trades
+- System prompt updated: 6 playbooks described, strategy management guidance, old strategy names removed
+
+**Tests**
+- `lib/ai/strategies/__tests__/playbook-schemas.test.ts` — 17 tests (enums, schemas, validation, defaults)
+- `lib/ai/tools/__tests__/list-strategies.test.ts` — 5 tests (enrichment, filtering, empty state, errors)
+- `lib/ai/tools/__tests__/create-strategy.test.ts` — 5 tests (default merging, validation, playbook-specific config, errors)
+- `lib/ai/tools/__tests__/update-strategy.test.ts` — 9 tests (name/budget/status/config updates, not-found, no-fields, invalid config, errors)
+- Full suite: 132/132 tests passing
+
+### Files Created
+- `lib/ai/strategies/playbook-schemas.ts`
+- `lib/ai/tools/list-strategies.ts`
+- `lib/ai/tools/create-strategy.ts`
+- `lib/ai/tools/update-strategy.ts`
+- `lib/ai/strategies/__tests__/playbook-schemas.test.ts`
+- `lib/ai/tools/__tests__/list-strategies.test.ts`
+- `lib/ai/tools/__tests__/create-strategy.test.ts`
+- `lib/ai/tools/__tests__/update-strategy.test.ts`
+- `lib/db/migrations/0012_oval_george_stacy.sql`
+
+### Files Modified
+- `lib/db/schema.ts` — Strategy table, Trade FK, User risk fields
+- `lib/db/queries.ts` — 6 new query functions
+- `lib/ai/prompts.ts` — system prompt updated with playbooks
+- `lib/ai/tool-wrapper.ts` — 3 TOOL_CONFIG entries
+- `lib/types.ts` — 3 new tool type exports
+- `app/(chat)/api/chat/route.ts` — tool registration, strategy context
+
+### Decisions
+- `strategyId` on Trade is nullable FK — backward-compatible with Phase 1 trades that have no strategy
+- Old `strategy` text column on Trade preserved (no data migration needed, will be deprecated later)
+- Config validation uses merge-then-validate: user partial config + playbook defaults → validate against schema
+- Tool tests mock DB queries at module level (consistent with existing test patterns); no standalone query tests (queries tested indirectly through tool tests)
+
