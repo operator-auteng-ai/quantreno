@@ -1,16 +1,20 @@
 import { tool } from "ai";
 import type { Session } from "next-auth";
 import { z } from "zod";
-import { getOpenTradesByUserId } from "@/lib/db/queries";
 import { getKalshiClientForUser } from "@/lib/kalshi";
+import type { KalshiPosition } from "@/lib/kalshi/types";
 import { log } from "@/lib/logger";
 
 type GetPortfolioProps = { session: Session };
 
+/** Max positions to include in portfolio summary */
+const MAX_POSITIONS = 50;
+
 export const getPortfolio = ({ session }: GetPortfolioProps) =>
   tool({
-    description: `Fetch the user's full portfolio summary with live market prices and unrealized P&L.
-Combines Kalshi live positions with the local Trade table to compute gains/losses per position.
+    description: `Fetch the user's full portfolio summary with live market prices, entry prices, and unrealized P&L.
+Uses market_exposure from Kalshi to derive average entry prices, then compares against live market
+bids to calculate unrealized gains/losses per position.
 Use when the user asks "how are my positions?", "what's my P&L?", or "portfolio summary".`,
     inputSchema: z.object({
       ticker: z
@@ -22,72 +26,71 @@ Use when the user asks "how are my positions?", "what's my P&L?", or "portfolio 
       try {
         const client = await getKalshiClientForUser(session.user.id);
 
-        const [balanceData, positionsData, openTrades] = await Promise.all([
+        const [balanceData, positionsData] = await Promise.all([
           client.getBalance(),
           client.getPositions({
             ticker,
             count_filter: "position",
+            limit: MAX_POSITIONS,
           }),
-          getOpenTradesByUserId({ userId: session.user.id }),
         ]);
 
         const positions = (positionsData.positions ?? []).filter(
-          (p) => p.position !== 0
+          (p: KalshiPosition) => p.position !== 0
         );
 
-        // Build a map of entry prices from Trade table keyed by ticker
-        const tradesByTicker = new Map<
+        // Fetch live market data in a single batch call
+        const tickerList = positions.map((p: KalshiPosition) => p.ticker);
+        const marketMap = new Map<
           string,
-          { priceCents: number; count: number; action: string; side: string }
+          { yes_bid: number; no_bid: number; title: string }
         >();
-        for (const t of openTrades) {
-          tradesByTicker.set(t.ticker, {
-            priceCents: t.priceCents,
-            count: t.count,
-            action: t.action,
-            side: t.side,
+
+        if (tickerList.length > 0) {
+          const marketsData = await client.getMarkets({
+            tickers: tickerList.join(","),
+            limit: MAX_POSITIONS,
           });
+          for (const m of marketsData.markets) {
+            marketMap.set(m.ticker, {
+              yes_bid: m.yes_bid,
+              no_bid: m.no_bid,
+              title: m.title,
+            });
+          }
         }
 
-        // Fetch live market data for each position to get current prices
-        const marketDataResults = await Promise.allSettled(
-          positions.map((p) => client.getMarket(p.ticker))
-        );
-
-        const portfolio = positions.map((p, i) => {
+        const portfolio = positions.map((p: KalshiPosition) => {
           const side = p.position > 0 ? "yes" : "no";
           const contracts = Math.abs(p.position);
-          const tradeEntry = tradesByTicker.get(p.ticker);
 
-          // Get live price from market data
-          const marketResult = marketDataResults[i];
-          let currentPriceCents: number | null = null;
-          let marketTitle: string | undefined;
-          if (marketResult.status === "fulfilled") {
-            const market = marketResult.value.market;
-            currentPriceCents = side === "yes" ? market.yes_bid : market.no_bid;
-            marketTitle = market.title;
-          }
+          // Entry price from market_exposure: exposure = cost basis = entry × contracts
+          const entryPriceCents =
+            contracts > 0
+              ? Math.round(p.market_exposure_cents / contracts)
+              : null;
+
+          // Get live price from batch market data
+          const market = marketMap.get(p.ticker);
+          const currentPriceCents = market
+            ? side === "yes"
+              ? market.yes_bid
+              : market.no_bid
+            : null;
 
           // Compute unrealized P&L if we have both entry and current price
           let unrealizedPnlCents: number | null = null;
-          if (tradeEntry && currentPriceCents !== null) {
-            const entryPrice = tradeEntry.priceCents;
-            // For buy positions: pnl = (current - entry) * contracts
-            // For sell positions: pnl = (entry - current) * contracts
-            if (tradeEntry.action === "buy") {
-              unrealizedPnlCents = (currentPriceCents - entryPrice) * contracts;
-            } else {
-              unrealizedPnlCents = (entryPrice - currentPriceCents) * contracts;
-            }
+          if (entryPriceCents !== null && currentPriceCents !== null) {
+            unrealizedPnlCents =
+              (currentPriceCents - entryPriceCents) * contracts;
           }
 
           return {
             ticker: p.ticker,
-            title: marketTitle,
+            title: market?.title,
             side,
             contracts,
-            entry_price_cents: tradeEntry?.priceCents ?? null,
+            entry_price_cents: entryPriceCents,
             current_price_cents: currentPriceCents,
             unrealized_pnl_cents: unrealizedPnlCents,
             unrealized_pnl_dollars:
@@ -107,6 +110,13 @@ Use when the user asks "how are my positions?", "what's my P&L?", or "portfolio 
           (sum, p) => sum + p.realized_pnl_cents,
           0
         );
+
+        log.info("getPortfolio", "fetched", {
+          userId: session.user.id,
+          positionCount: portfolio.length,
+          totalUnrealized: totalUnrealizedCents,
+          totalRealized: totalRealizedCents,
+        });
 
         return {
           balance_cents: balanceData.balance,

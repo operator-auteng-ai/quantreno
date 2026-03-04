@@ -51,14 +51,21 @@ current P&L, or to see which markets the user is already exposed to.`,
         return {
           balance_cents: balanceData.balance,
           balance_dollars: (balanceData.balance / 100).toFixed(2),
-          positions: positions.map((p) => ({
-            ticker: p.ticker,
-            position: p.position, // positive = net yes, negative = net no
-            side: p.position > 0 ? "yes" : "no",
-            contracts: Math.abs(p.position),
-            realized_pnl_cents: p.realized_pnl_cents,
-            market_exposure_cents: p.market_exposure_cents,
-          })),
+          positions: positions.map((p) => {
+            const contracts = Math.abs(p.position);
+            return {
+              ticker: p.ticker,
+              position: p.position, // positive = net yes, negative = net no
+              side: p.position > 0 ? "yes" : "no",
+              contracts,
+              entry_price_cents:
+                contracts > 0
+                  ? Math.round(p.market_exposure_cents / contracts)
+                  : null,
+              realized_pnl_cents: p.realized_pnl_cents,
+              market_exposure_cents: p.market_exposure_cents,
+            };
+          }),
           resting_orders: ordersData.orders.map((o) => ({
             order_id: o.order_id,
             ticker: o.ticker,

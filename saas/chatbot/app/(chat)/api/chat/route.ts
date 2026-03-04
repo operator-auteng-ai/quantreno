@@ -200,7 +200,12 @@ export async function POST(request: Request) {
         const posLines = livePositions.map((p) => {
           const side = p.position > 0 ? "YES" : "NO";
           const contracts = Math.abs(p.position);
-          return `- ${p.ticker}: ${contracts}x ${side} (exposure $${(p.market_exposure_cents / 100).toFixed(2)}, realized P&L $${(p.realized_pnl_cents / 100).toFixed(2)})`;
+          const avgEntry =
+            contracts > 0
+              ? Math.round(p.market_exposure_cents / contracts)
+              : null;
+          const entryStr = avgEntry !== null ? ` @ ${avgEntry}¢` : "";
+          return `- ${p.ticker}: ${contracts}x ${side}${entryStr} (exposure $${(p.market_exposure_cents / 100).toFixed(2)}, realized P&L $${(p.realized_pnl_cents / 100).toFixed(2)})`;
         });
         parts.push(
           `Open positions (${livePositions.length}):\n${posLines.join("\n")}`
