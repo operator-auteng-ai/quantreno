@@ -24,7 +24,7 @@ export async function proxy(request: NextRequest) {
   });
 
   // Public pages — always accessible
-  if (pathname === "/" || pathname === "/design-system") {
+  if (pathname === "/" || pathname.startsWith("/design-system")) {
     return NextResponse.next();
   }
 
