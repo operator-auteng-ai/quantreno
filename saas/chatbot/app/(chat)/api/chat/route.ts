@@ -10,9 +10,9 @@ import { after } from "next/server";
 import { createResumableStreamContext } from "resumable-stream";
 import { auth, type UserType } from "@/app/(auth)/auth";
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
-import { log } from "@/lib/logger";
 import { systemPrompt } from "@/lib/ai/prompts";
 import { getLanguageModel } from "@/lib/ai/providers";
+import { type ToolAuditEntry, wrapTool } from "@/lib/ai/tool-wrapper";
 import { cancelOrder } from "@/lib/ai/tools/cancel-order";
 import { createDocument } from "@/lib/ai/tools/create-document";
 import { createOrder } from "@/lib/ai/tools/create-order";
@@ -27,11 +27,6 @@ import { updateDocument } from "@/lib/ai/tools/update-document";
 import { updateStrategy } from "@/lib/ai/tools/update-strategy";
 import { webSearch } from "@/lib/ai/tools/web-search";
 import { xSearch } from "@/lib/ai/tools/x-search";
-import {
-  type ToolAuditEntry,
-  wrapTool,
-  TOOL_CONFIG,
-} from "@/lib/ai/tool-wrapper";
 import { isProductionEnvironment } from "@/lib/constants";
 import {
   createStreamId,
@@ -40,7 +35,6 @@ import {
   getChatById,
   getMessageCountByUserId,
   getMessagesByChatId,
-  getOpenTradesByUserId,
   saveAiCall,
   saveChat,
   saveMessages,
@@ -50,6 +44,8 @@ import {
 } from "@/lib/db/queries";
 import type { DBMessage } from "@/lib/db/schema";
 import { ChatbotError } from "@/lib/errors";
+import { getKalshiClientForUser } from "@/lib/kalshi";
+import { log } from "@/lib/logger";
 import type { ChatMessage } from "@/lib/types";
 import { convertToUIMessages, generateUUID } from "@/lib/utils";
 import { generateTitleFromUserMessage } from "../../actions";
@@ -151,41 +147,87 @@ export async function POST(request: Request) {
 
     const modelMessages = await convertToModelMessages(uiMessages);
 
-    // Build session context: strategies + open trades (non-blocking, best-effort)
+    // Build session context: strategies + live Kalshi positions
+    // Kalshi credentials missing is expected (not an error) — everything else throws.
     let sessionContext: string | undefined;
-    try {
-      const [openTrades, activeStrategies] = await Promise.all([
-        getOpenTradesByUserId({ userId: session.user.id }),
-        getActiveStrategiesByUserId({ userId: session.user.id }),
-      ]);
 
-      const parts: string[] = [];
+    const kalshiPromise = getKalshiClientForUser(session.user.id)
+      .then(async (client) => {
+        const [balance, positions] = await Promise.all([
+          client.getBalance(),
+          client.getPositions({ count_filter: "position" }),
+        ]);
+        return { balance, positions: positions.positions ?? [] };
+      })
+      .catch((err: Error) => {
+        // No credentials saved → expected state, not an error
+        if (err.message.includes("not connected")) {
+          return null;
+        }
+        // Real API failure → log and re-throw
+        log.error("session-context", "Kalshi API failed", {
+          userId: session.user.id,
+          error: err.message,
+        });
+        throw err;
+      });
 
-      if (activeStrategies.length > 0) {
-        const stratLines = activeStrategies.map(
-          (s) =>
-            `- "${s.name}" (${s.playbook}, $${(s.budgetCents / 100).toFixed(2)} budget, ${s.status})`
-        );
+    const [kalshiResult, activeStrategies] = await Promise.allSettled([
+      kalshiPromise,
+      getActiveStrategiesByUserId({ userId: session.user.id }),
+    ]);
+
+    const parts: string[] = [];
+
+    // Live Kalshi portfolio
+    if (kalshiResult.status === "fulfilled" && kalshiResult.value) {
+      const kalshiData = kalshiResult.value;
+      parts.push(
+        `Cash balance: $${(kalshiData.balance.balance / 100).toFixed(2)}`
+      );
+
+      const livePositions = kalshiData.positions.filter(
+        (p) => p.position !== 0
+      );
+      if (livePositions.length > 0) {
+        const posLines = livePositions.map((p) => {
+          const side = p.position > 0 ? "YES" : "NO";
+          const contracts = Math.abs(p.position);
+          return `- ${p.ticker}: ${contracts}x ${side} (exposure $${(p.market_exposure_cents / 100).toFixed(2)}, realized P&L $${(p.realized_pnl_cents / 100).toFixed(2)})`;
+        });
         parts.push(
-          `Active strategies (${activeStrategies.length}):\n${stratLines.join("\n")}`
+          `Open positions (${livePositions.length}):\n${posLines.join("\n")}`
         );
       }
+    } else if (kalshiResult.status === "rejected") {
+      log.error("session-context", "Kalshi context failed", {
+        userId: session.user.id,
+        error: kalshiResult.reason?.message ?? String(kalshiResult.reason),
+      });
+    }
 
-      if (openTrades.length > 0) {
-        const tradeLines = openTrades.map(
-          (t) =>
-            `- ${t.ticker}: ${t.action} ${t.count}x ${t.side} @ ${(t.priceCents / 100).toFixed(2)} (order ${t.orderId})${t.strategyId ? ` [strategy: ${t.strategyId}]` : ""}`
-        );
-        parts.push(
-          `Open positions (${openTrades.length}):\n${tradeLines.join("\n")}`
-        );
-      }
+    if (
+      activeStrategies.status === "fulfilled" &&
+      activeStrategies.value.length > 0
+    ) {
+      const strats = activeStrategies.value;
+      const stratLines = strats.map(
+        (s) =>
+          `- "${s.name}" (${s.playbook}, $${(s.budgetCents / 100).toFixed(2)} budget, ${s.status})`
+      );
+      parts.push(
+        `Active strategies (${strats.length}):\n${stratLines.join("\n")}`
+      );
+    } else if (activeStrategies.status === "rejected") {
+      log.error("session-context", "strategies query failed", {
+        userId: session.user.id,
+        error:
+          activeStrategies.reason?.message ?? String(activeStrategies.reason),
+      });
+    }
 
-      if (parts.length > 0) {
-        sessionContext = parts.join("\n\n");
-      }
-    } catch {
-      // Non-fatal — proceed without context
+    if (parts.length > 0) {
+      sessionContext = parts.join("\n\n");
     }
 
     // Request-scoped audit queue — tools push entries, onStepFinish flushes
@@ -226,20 +268,68 @@ export async function POST(request: Request) {
               }
             : undefined,
           tools: {
-            getMarkets: wrapTool("getMarkets", getMarkets({ session }), toolAuditQueue),
-            getPositions: wrapTool("getPositions", getPositions({ session }), toolAuditQueue),
-            getPortfolio: wrapTool("getPortfolio", getPortfolio({ session }), toolAuditQueue),
-            getTradeHistory: wrapTool("getTradeHistory", getTradeHistory({ session }), toolAuditQueue),
-            createOrder: wrapTool("createOrder", createOrder({ session }), toolAuditQueue),
-            cancelOrder: wrapTool("cancelOrder", cancelOrder({ session }), toolAuditQueue),
-            listStrategies: wrapTool("listStrategies", listStrategies({ session }), toolAuditQueue),
-            createStrategy: wrapTool("createStrategy", createStrategy({ session }), toolAuditQueue),
-            updateStrategy: wrapTool("updateStrategy", updateStrategy({ session }), toolAuditQueue),
+            getMarkets: wrapTool(
+              "getMarkets",
+              getMarkets({ session }),
+              toolAuditQueue
+            ),
+            getPositions: wrapTool(
+              "getPositions",
+              getPositions({ session }),
+              toolAuditQueue
+            ),
+            getPortfolio: wrapTool(
+              "getPortfolio",
+              getPortfolio({ session }),
+              toolAuditQueue
+            ),
+            getTradeHistory: wrapTool(
+              "getTradeHistory",
+              getTradeHistory({ session }),
+              toolAuditQueue
+            ),
+            createOrder: wrapTool(
+              "createOrder",
+              createOrder({ session }),
+              toolAuditQueue
+            ),
+            cancelOrder: wrapTool(
+              "cancelOrder",
+              cancelOrder({ session }),
+              toolAuditQueue
+            ),
+            listStrategies: wrapTool(
+              "listStrategies",
+              listStrategies({ session }),
+              toolAuditQueue
+            ),
+            createStrategy: wrapTool(
+              "createStrategy",
+              createStrategy({ session }),
+              toolAuditQueue
+            ),
+            updateStrategy: wrapTool(
+              "updateStrategy",
+              updateStrategy({ session }),
+              toolAuditQueue
+            ),
             webSearch: wrapTool("webSearch", webSearch, toolAuditQueue),
             xSearch: wrapTool("xSearch", xSearch, toolAuditQueue),
-            createDocument: wrapTool("createDocument", createDocument({ session, dataStream }), toolAuditQueue),
-            updateDocument: wrapTool("updateDocument", updateDocument({ session, dataStream }), toolAuditQueue),
-            requestSuggestions: wrapTool("requestSuggestions", requestSuggestions({ session, dataStream }), toolAuditQueue),
+            createDocument: wrapTool(
+              "createDocument",
+              createDocument({ session, dataStream }),
+              toolAuditQueue
+            ),
+            updateDocument: wrapTool(
+              "updateDocument",
+              updateDocument({ session, dataStream }),
+              toolAuditQueue
+            ),
+            requestSuggestions: wrapTool(
+              "requestSuggestions",
+              requestSuggestions({ session, dataStream }),
+              toolAuditQueue
+            ),
           },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,

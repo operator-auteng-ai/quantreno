@@ -52,7 +52,7 @@ describe("listStrategies tool", () => {
 
   it("returns strategies with trade stats enrichment", async () => {
     const tool = listStrategies({ session });
-    const result = await tool.execute!({} as any, {} as any);
+    const result = await (tool.execute as any)({} as any, {} as any);
 
     expect(result.strategies).toHaveLength(1);
     expect(result.strategies[0].name).toBe("Oil Supply Chain");
@@ -63,7 +63,7 @@ describe("listStrategies tool", () => {
 
   it("passes status filter to query", async () => {
     const tool = listStrategies({ session });
-    await tool.execute!({ status: "paused" } as any, {} as any);
+    await (tool.execute as any)({ status: "paused" } as any, {} as any);
 
     expect(mockGetStrategiesByUserId).toHaveBeenCalledWith(
       expect.objectContaining({ status: "paused" })
@@ -74,7 +74,7 @@ describe("listStrategies tool", () => {
     mockGetStrategyTradeStats.mockResolvedValue([]);
 
     const tool = listStrategies({ session });
-    const result = await tool.execute!({} as any, {} as any);
+    const result = await (tool.execute as any)({} as any, {} as any);
 
     expect(result.strategies[0].openPositions).toBe(0);
   });
@@ -84,7 +84,7 @@ describe("listStrategies tool", () => {
     mockGetStrategyTradeStats.mockResolvedValue([]);
 
     const tool = listStrategies({ session });
-    const result = await tool.execute!({} as any, {} as any);
+    const result = await (tool.execute as any)({} as any, {} as any);
 
     expect(result.strategies).toEqual([]);
     expect(result.total).toBe(0);
@@ -94,7 +94,7 @@ describe("listStrategies tool", () => {
     mockGetStrategiesByUserId.mockRejectedValue(new Error("DB down"));
 
     const tool = listStrategies({ session });
-    const result = await tool.execute!({} as any, {} as any);
+    const result = await (tool.execute as any)({} as any, {} as any);
 
     expect(result.error).toBe("Failed to list strategies");
     expect(result.strategies).toEqual([]);

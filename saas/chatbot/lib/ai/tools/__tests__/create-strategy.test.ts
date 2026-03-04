@@ -48,7 +48,7 @@ describe("createStrategy tool", () => {
 
   it("creates a strategy with defaults merged", async () => {
     const tool = createStrategy({ session });
-    const result = await tool.execute!(
+    const result = await (tool.execute as any)(
       {
         name: "Test Strategy",
         playbook: "event_driven",
@@ -73,7 +73,7 @@ describe("createStrategy tool", () => {
 
   it("merges user config with playbook defaults", async () => {
     const tool = createStrategy({ session });
-    await tool.execute!(
+    await (tool.execute as any)(
       {
         name: "Tail Risk Portfolio",
         playbook: "tail_risk",
@@ -92,7 +92,7 @@ describe("createStrategy tool", () => {
 
   it("returns error for invalid config", async () => {
     const tool = createStrategy({ session });
-    const result = await tool.execute!(
+    const result = await (tool.execute as any)(
       {
         name: "Bad Config",
         playbook: "tail_risk",
@@ -112,7 +112,7 @@ describe("createStrategy tool", () => {
     mockDbCreateStrategy.mockRejectedValue(new Error("insert failed"));
 
     const tool = createStrategy({ session });
-    const result = await tool.execute!(
+    const result = await (tool.execute as any)(
       {
         name: "Failing Strategy",
         playbook: "event_driven",
@@ -133,7 +133,7 @@ describe("createStrategy tool", () => {
     );
 
     const tool = createStrategy({ session });
-    await tool.execute!(
+    await (tool.execute as any)(
       {
         name: "Macro Chain",
         playbook: "macro_thematic",

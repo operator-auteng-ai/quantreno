@@ -60,7 +60,7 @@ describe("updateStrategy tool", () => {
 
   it("updates strategy name", async () => {
     const tool = updateStrategy({ session });
-    const result = await tool.execute!(
+    const result = await (tool.execute as any)(
       { strategyId: "strat-001", name: "New Name" } as any,
       {} as any
     );
@@ -83,7 +83,7 @@ describe("updateStrategy tool", () => {
     });
 
     const tool = updateStrategy({ session });
-    const result = await tool.execute!(
+    const result = await (tool.execute as any)(
       { strategyId: "strat-001", budgetCents: 20000 } as any,
       {} as any
     );
@@ -100,7 +100,7 @@ describe("updateStrategy tool", () => {
     });
 
     const tool = updateStrategy({ session });
-    const result = await tool.execute!(
+    const result = await (tool.execute as any)(
       { strategyId: "strat-001", status: "paused" } as any,
       {} as any
     );
@@ -120,7 +120,7 @@ describe("updateStrategy tool", () => {
     });
 
     const tool = updateStrategy({ session });
-    const result = await tool.execute!(
+    const result = await (tool.execute as any)(
       {
         strategyId: "strat-001",
         config: { catalystDate: "2026-03-15" },
@@ -141,7 +141,7 @@ describe("updateStrategy tool", () => {
     mockGetStrategyById.mockResolvedValue(null);
 
     const tool = updateStrategy({ session });
-    const result = await tool.execute!(
+    const result = await (tool.execute as any)(
       { strategyId: "strat-999", name: "Ghost" } as any,
       {} as any
     );
@@ -153,7 +153,7 @@ describe("updateStrategy tool", () => {
 
   it("returns error when no fields to update", async () => {
     const tool = updateStrategy({ session });
-    const result = await tool.execute!(
+    const result = await (tool.execute as any)(
       { strategyId: "strat-001" } as any,
       {} as any
     );
@@ -164,7 +164,7 @@ describe("updateStrategy tool", () => {
 
   it("rejects invalid config for the playbook", async () => {
     const tool = updateStrategy({ session });
-    const result = await tool.execute!(
+    const result = await (tool.execute as any)(
       {
         strategyId: "strat-001",
         config: { entryRules: { maxEntryPriceCents: 200 } }, // max is 99
@@ -181,7 +181,7 @@ describe("updateStrategy tool", () => {
     mockDbUpdateStrategy.mockRejectedValue(new Error("update failed"));
 
     const tool = updateStrategy({ session });
-    const result = await tool.execute!(
+    const result = await (tool.execute as any)(
       { strategyId: "strat-001", name: "Failing" } as any,
       {} as any
     );
@@ -194,7 +194,7 @@ describe("updateStrategy tool", () => {
     mockDbUpdateStrategy.mockResolvedValue(null);
 
     const tool = updateStrategy({ session });
-    const result = await tool.execute!(
+    const result = await (tool.execute as any)(
       { strategyId: "strat-001", name: "Failing" } as any,
       {} as any
     );
