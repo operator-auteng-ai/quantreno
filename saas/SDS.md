@@ -2,7 +2,7 @@
 
 Design System Specification for Quantreno.
 
-Status: Draft v0.1
+Status: v0.2 — Component Registry
 
 ## 1) Purpose
 
@@ -78,6 +78,22 @@ chatbot/
         page.tsx            # new chat
         [id]/page.tsx       # existing chat
       settings/page.tsx     # user settings
+    design-system/          # live design system (dev only)
+      layout.tsx            # 3-tab layout: Gallery | Components | Tokens
+      page.tsx              # Gallery — overview cards linking to sections
+      components/page.tsx   # Components — registry-driven demo renderer
+      tokens/page.tsx       # Design Tokens — color scales, typography, motion
+      _registry/            # ⭐ SINGLE SOURCE OF TRUTH for all components
+        types.ts            # AtomicLevel, RegistryEntry types
+        entries.ts          # flat array of all component metadata
+        helpers.ts          # getByLevel(), getGrouped(), getCounts()
+        demo-map.ts         # React.lazy() import map keyed by entry id
+        demos/
+          atoms/            # 14 demo files (one per atom)
+          molecules/        # 20 demo files (one per molecule)
+          components/       # 8 demo files (one per component)
+      _components/          # shared DS page components (sidebar, section blocks)
+        sections-config.ts  # sidebar/gallery config (counts derived from registry)
   components/
     ui/                     # shadcn primitives (immutable)
     ai-elements/            # AI chat UI elements
@@ -100,6 +116,7 @@ Import rules:
 - Feature code imports from `@/components`, `@/lib`, `@/hooks`
 - Feature code does not import directly from `components/ui/*` where a wrapper exists
 - Landing page components live in `components/landing/`
+- Design system registry is at `app/design-system/_registry/` — import from there for component metadata
 
 ## 6) Token System (Required)
 
@@ -128,7 +145,7 @@ Add to `globals.css` for trading UI:
 
 - Signal: `--signal-profit` (green), `--signal-loss` (red), `--signal-neutral` (muted), `--signal-info` (blue)
 - Confidence: `--confidence-high`, `--confidence-medium`, `--confidence-low`
-- Brand: `--brand-primary`, `--brand-gradient-start`, `--brand-gradient-end`
+- Brand: `--brand`, `--brand-foreground`, `--brand-muted`, `--brand-hover`, `--brand-light`, `--brand-gradient-start`, `--brand-gradient-end`
 - Data-viz: extend `--chart-*` as needed for trading charts
 
 ### 6.3 Theme Configuration
@@ -176,21 +193,97 @@ Do not:
 - Use compact density in marketing/landing contexts
 - Display prices without monospace font
 
-## 8) Component Layers
+## 8) Component Registry (Single Source of Truth)
 
-### 8.1 Primitives (shadcn, immutable)
+All UI components are defined in `app/design-system/_registry/entries.ts`. This is the **canonical list** — sidebar counts, gallery cards, and the components page all derive from it. When building new features, check the registry first to find existing components.
 
-Located in `components/ui/`. Currently available (from `components.json` registry):
+### 8.1 Registry Architecture
 
-- Layout: `sidebar`, `separator`, `scroll-area`, `card`
-- Form: `button`, `input`, `select`, `label`, `form`, `textarea`
-- Overlay: `dialog`, `alert-dialog`, `dropdown-menu`, `tooltip`, `hover-card`
-- Display: `badge`, `progress`, `skeleton`, `collapsible`
-- Feedback: `sonner` (toasts)
+```text
+_registry/
+  types.ts      →  AtomicLevel = "atom" | "molecule" | "component"
+                    RegistryEntry = { id, label, level, sublabel, source, description }
+  entries.ts    →  REGISTRY: RegistryEntry[] (flat array, 42 entries)
+  helpers.ts    →  getByLevel(), getGrouped(), getCounts(), getGalleryDescriptions()
+  demo-map.ts   →  React.lazy() imports keyed by entry id
+  demos/        →  one default-exported component per entry
+```
 
-### 8.2 AI Elements (chat-specific)
+**How the components page works:** `components/page.tsx` is an 85-line orchestrator that loops `LEVELS` → calls `getGrouped(level)` → renders each sublabel group → lazy-loads each demo from `DEMO_MAP[entry.id]` inside `<Suspense>`.
 
-Located in `components/ai-elements/`. Chat rendering primitives:
+### 8.2 Adding a New Component
+
+1. **Add the entry** to `_registry/entries.ts`:
+   ```ts
+   { id: "my-widget", label: "My Widget", level: "molecule", sublabel: "Dashboard", source: "@/components/ui/my-widget", description: "Short description" },
+   ```
+2. **Create the demo** at `_registry/demos/molecules/my-widget-demo.tsx`:
+   ```tsx
+   export default function MyWidgetDemo() {
+     return ( /* self-contained demo JSX */ );
+   }
+   ```
+3. **Add the lazy import** to `_registry/demo-map.ts`:
+   ```ts
+   "my-widget": lazy(() => import("./demos/molecules/my-widget-demo")),
+   ```
+4. **Done.** Sidebar count, gallery card, and components page update automatically.
+
+### 8.3 Current Inventory (42 components)
+
+**Atoms (14)** — primitive UI elements:
+
+| Sublabel | Components |
+|---|---|
+| Buttons | Button (6 variants + brand CTA) |
+| Badges | Badge (4 variants + trading signal) |
+| Form Controls | Input, Textarea, Label, Select |
+| Feedback | Progress, Skeleton |
+| Display | Avatar, Tooltip, Separator |
+| Scrolling | ScrollArea, Collapsible, Carousel |
+
+**Molecules (20)** — composed from atoms:
+
+| Sublabel | Components |
+|---|---|
+| Alerts | Alert (5 variants) |
+| Cards | Card (standard + position + market) |
+| Trading | PricePill, EdgeMeter |
+| Navigation | NavSidebarItems, Breadcrumbs, TabBar |
+| Dashboard | StatCard, ChatMessage, ActivityFeedItem, WatchlistItem, DataTableRow |
+| Overlays | Dialog, AlertDialog, Sheet, DropdownMenu, HoverCard |
+| Input Groups | Command, ButtonGroup, InputGroup |
+
+**Components (8)** — full feature blocks:
+
+| Sublabel | Components |
+|---|---|
+| Trading | P&L Display, OrderConfirmation |
+| Dashboard | PortfolioSummary, MarketOverview |
+| AI Chat | ChatInput, CommandPalette |
+| Settings | KalshiConnection, ThemeToggle |
+
+### 8.4 Sublabel Conventions
+
+Sublabels group components within each atomic level. When adding a new component, use an existing sublabel if it fits. Create a new sublabel only when the component doesn't belong to any existing group. Current sublabels:
+
+- **Atoms:** Buttons, Badges, Form Controls, Feedback, Display, Scrolling
+- **Molecules:** Alerts, Cards, Trading, Navigation, Dashboard, Overlays, Input Groups
+- **Components:** Trading, Dashboard, AI Chat, Settings
+
+### 8.5 Primitives vs Custom
+
+The `source` field in each registry entry indicates where the component lives:
+
+- `@/components/ui/*` — shadcn primitive (immutable, do not edit)
+- `@/components/*` — app-level composite (e.g., `kalshi-connection-form`)
+- `custom` — demo-only composition (built from primitives in the demo file itself, not yet extracted to a standalone component)
+
+When a `custom` component is used in production code, extract it to `components/` and update its `source` field.
+
+### 8.6 AI Elements (chat-specific)
+
+Located in `components/ai-elements/`. Chat rendering primitives (not in the registry — these are AI SDK integration components):
 
 - `message`, `conversation`, `loader`, `shimmer`
 - `tool`, `reasoning`, `chain-of-thought`
@@ -199,28 +292,9 @@ Located in `components/ai-elements/`. Chat rendering primitives:
 - `sources`, `inline-citation`
 - `suggestion`, `plan`, `task`
 
-### 8.3 Trading Components (to build)
+### 8.7 Landing Components
 
-Wrappers with product semantics for trading workflows:
-
-- `PositionCard` — ticker, side, entry price, current price, P&L, confidence
-- `OrderConfirmation` — pre-trade review with risk metrics
-- `MarketCard` — event title, price, volume, expiry countdown
-- `StrategyBadge` — strategy name with color coding
-- `PnLDisplay` — profit/loss with signal coloring (green/red)
-- `PricePill` — formatted price in monospace with direction indicator
-- `EdgeMeter` — visual edge percentage with confidence band
-
-Wrapper rules:
-
-- Accept typed props only
-- Map all visual states to tokens
-- Use `--signal-*` tokens for profit/loss/neutral states
-- Encapsulate primitive composition and class variance in wrapper
-
-### 8.4 Landing Components (to build)
-
-Located in `components/landing/`:
+Located in `components/landing/` (not in the registry — these are marketing-only):
 
 - `Hero` — headline, subhead, CTA buttons, background effect
 - `HowItWorks` — 3-step visual flow
@@ -228,7 +302,15 @@ Located in `components/landing/`:
 - `Pricing` — tier comparison table
 - `Footer` — links, legal disclaimers, regulatory notice
 
-### 8.5 Patterns (workflow composites)
+### 8.8 Wrapper Rules
+
+- Accept typed props only
+- Map all visual states to tokens
+- Use `--signal-*` tokens for profit/loss/neutral states
+- Encapsulate primitive composition and class variance in wrapper
+- Demos must be self-contained (no external state, no API calls)
+
+### 8.9 Patterns (workflow composites)
 
 Higher-level compositions for domain workflows:
 
@@ -306,18 +388,32 @@ Minimum UI quality gates:
 - Mobile responsive verification for all new pages
 - Dark and light mode verification
 
-## 15) Change Management
+## 15) Design System Pages
+
+The live design system is at `/design-system` (dev only) with three tabs:
+
+| Tab | Route | Purpose |
+|---|---|---|
+| **Gallery** | `/design-system` | Overview cards with counts, links to sections |
+| **Components** | `/design-system/components` | All 42 components rendered by atomic level |
+| **Design Tokens** | `/design-system/tokens` | Color scales, typography, shadows, motion, z-index |
+
+The Gallery and Components pages derive all counts and descriptions from the registry automatically. Token sections are static.
+
+## 16) Change Management
 
 When adding or changing UI patterns:
 
-1. Update this SDS if new conventions are needed
-2. Add or update tokens if new semantics are required
-3. Implement through wrapper or pattern layer
-4. Verify in both dark and light mode
+1. Add the component to `_registry/entries.ts` + create a demo + add to `demo-map.ts`
+2. Update this SDS if new conventions are needed (especially section 8.3 inventory)
+3. Add or update tokens in `globals.css` if new semantics are required
+4. Implement through wrapper or pattern layer
+5. Verify in both dark and light mode
+6. Check `/design-system/components` renders the new demo correctly
 
 Do not fork primitive behavior in feature code.
 
-## 16) Definition of Done for UI Work
+## 17) Definition of Done for UI Work
 
 A UI task is done only when:
 
@@ -327,4 +423,5 @@ A UI task is done only when:
 - Accessibility requirements in section 12 are met
 - Responsive layout verified (mobile + desktop)
 - Dark and light mode verified
+- Component is registered in `_registry/entries.ts` with a working demo
 - Relevant SDS sections are updated if behavior conventions changed
