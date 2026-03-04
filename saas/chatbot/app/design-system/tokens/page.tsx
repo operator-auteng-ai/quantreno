@@ -203,22 +203,21 @@ export default function TokensPage() {
         </SectionBlock>
 
         {/* ════════════════ MOTION ════════════════ */}
-        <SectionBlock id="motion" title="Motion" description="Duration tokens and easing curves" count={3}>
+        <SectionBlock id="motion" title="Motion" description="Duration tokens and easing curves — hover to preview" count={3}>
           <div>
-            <SubLabel>Durations &amp; Easing</SubLabel>
+            <SubLabel>Durations &amp; Easing (hover to preview)</SubLabel>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { name: "Fast", token: "--duration-fast", value: "120ms" },
-                { name: "Normal", token: "--duration-normal", value: "200ms" },
-                { name: "Slow", token: "--duration-slow", value: "350ms" },
+                { name: "Fast", token: "--duration-fast", value: "120ms", ms: "120ms" },
+                { name: "Normal", token: "--duration-normal", value: "200ms", ms: "200ms" },
+                { name: "Slow", token: "--duration-slow", value: "350ms", ms: "350ms" },
               ].map((item) => (
-                <div key={item.name} className="rounded-lg border p-3 flex items-center gap-3">
+                <div key={item.name} className="group rounded-lg border p-3 flex items-center gap-3 cursor-pointer">
                   <div className="h-8 flex-1 rounded bg-brand/20 overflow-hidden">
                     <div
-                      className="h-full bg-brand rounded"
+                      className="h-full bg-brand rounded w-[15%] group-hover:w-[85%]"
                       style={{
-                        width: "60%",
-                        transition: `width var(${item.token}) var(--ease-default)`,
+                        transition: `width ${item.ms} var(--ease-default, cubic-bezier(0.4, 0, 0.2, 1))`,
                       }}
                     />
                   </div>
