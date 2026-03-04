@@ -27,14 +27,23 @@ function summarizeMarket(m: KalshiMarket) {
 export const getMarkets = ({ session }: GetMarketsProps) =>
   tool({
     description: `Scan Kalshi markets and events. Use this to discover what's trading,
-check prices on specific tickers, or filter by event. Returns structured market data
-including yes/no bid-ask spreads, volume, and settlement times. Always use this before
-recommending a trade to get current prices.`,
+check prices on specific tickers, or filter by event/series. Returns structured market
+data including yes/no bid-ask spreads, volume, and settlement times. Always use this
+before recommending a trade to get current prices.
+
+To browse by category, first use browseCategories to find the series_ticker, then pass
+it here to get markets for that series.`,
     inputSchema: z.object({
       event_ticker: z
         .string()
         .optional()
         .describe("Filter to markets within a specific event (e.g. KXCPI-26MAR)"),
+      series_ticker: z
+        .string()
+        .optional()
+        .describe(
+          "Filter to markets within a series (e.g. CPI, FED, KXBTC). Use browseCategories to discover series."
+        ),
       tickers: z
         .string()
         .optional()
@@ -51,12 +60,13 @@ recommending a trade to get current prices.`,
         .optional()
         .describe("Filter by market status. Omit to get all active markets."),
     }),
-    execute: async ({ event_ticker, tickers, limit, status }) => {
+    execute: async ({ event_ticker, series_ticker, tickers, limit, status }) => {
       try {
         const client = await getKalshiClientForUser(session.user.id);
 
         const { markets } = await client.getMarkets({
           event_ticker,
+          series_ticker,
           tickers,
           limit,
           status,

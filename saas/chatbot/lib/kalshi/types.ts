@@ -6,6 +6,25 @@ export interface KalshiCredentials {
   privateKeyPem: string;
 }
 
+// ─── Categories & Series ─────────────────────────────────────────────────────
+
+/** Maps category names (e.g. "Economics") to arrays of tags (e.g. ["Fed", "Inflation"]) */
+export type TagsByCategories = Record<string, string[] | null>;
+
+export interface KalshiSeries {
+  ticker: string;
+  title: string;
+  category: string;
+  tags?: string[];
+  frequency?: string;
+  settlement_timer_seconds?: number;
+}
+
+export interface GetSeriesParams {
+  category?: string;
+  tags?: string;
+}
+
 // ─── Events & Markets ────────────────────────────────────────────────────────
 
 export interface KalshiEvent {

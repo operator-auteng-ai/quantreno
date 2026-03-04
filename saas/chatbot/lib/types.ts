@@ -1,6 +1,7 @@
 import type { InferUITool, UIMessage } from "ai";
 import { z } from "zod";
 import type { ArtifactKind } from "@/components/artifact";
+import type { browseCategories } from "./ai/tools/browse-categories";
 import type { cancelOrder } from "./ai/tools/cancel-order";
 import type { createDocument } from "./ai/tools/create-document";
 import type { createOrder } from "./ai/tools/create-order";
@@ -25,6 +26,7 @@ export const messageMetadataSchema = z.object({
 
 export type MessageMetadata = z.infer<typeof messageMetadataSchema>;
 
+type browseCategoriesTool = InferUITool<ReturnType<typeof browseCategories>>;
 type getMarketsTool = InferUITool<ReturnType<typeof getMarkets>>;
 type getPositionsTool = InferUITool<ReturnType<typeof getPositions>>;
 type getPortfolioTool = InferUITool<ReturnType<typeof getPortfolio>>;
@@ -43,6 +45,7 @@ type requestSuggestionsTool = InferUITool<
 >;
 
 export type ChatTools = {
+  browseCategories: browseCategoriesTool;
   getMarkets: getMarketsTool;
   getPositions: getPositionsTool;
   getPortfolio: getPortfolioTool;

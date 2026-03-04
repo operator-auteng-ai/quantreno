@@ -8,6 +8,7 @@ import type {
   GetMarketsParams,
   GetOrdersParams,
   GetPositionsParams,
+  GetSeriesParams,
   GetTradesParams,
   KalshiApiError,
   KalshiBalance,
@@ -18,7 +19,9 @@ import type {
   KalshiOrder,
   KalshiOrderbook,
   KalshiPosition,
+  KalshiSeries,
   KalshiTrade,
+  TagsByCategories,
 } from "./types";
 
 export const KALSHI_BASE_URL =
@@ -138,6 +141,23 @@ export function createKalshiClient(credentials: KalshiCredentials) {
   const del = <T>(path: string) => kalshiFetch<T>(credentials, "DELETE", path);
 
   return {
+    // ── Categories & Series ──────────────────────────────────────────────────
+
+    async getTagsByCategories(): Promise<{
+      tags_by_categories: TagsByCategories;
+    }> {
+      return get("/search/tags_by_categories");
+    },
+
+    async getSeries(params: GetSeriesParams = {}): Promise<{
+      series: KalshiSeries[];
+    }> {
+      return get("/series", {
+        category: params.category,
+        tags: params.tags,
+      });
+    },
+
     // ── Events ──────────────────────────────────────────────────────────────
 
     async getEvents(params: GetEventsParams = {}): Promise<{

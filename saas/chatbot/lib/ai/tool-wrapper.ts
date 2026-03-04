@@ -76,6 +76,12 @@ export const TOOL_CONFIG: Record<string, ToolWrapConfig> = {
     promptHint:
       "strategy list — keep ALL strategy names, playbooks, budgets, statuses, open position counts",
   },
+  browseCategories: {
+    summarizeAbove: 4000,
+    maxChars: 8000,
+    promptHint:
+      "market categories/series — keep category names, tags, series tickers and titles",
+  },
   // Small-response tools — no summarization, just safety cap
   createOrder: { maxChars: 2000 },
   cancelOrder: { maxChars: 2000 },

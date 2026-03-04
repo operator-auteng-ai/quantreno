@@ -13,6 +13,7 @@ import { entitlementsByUserType } from "@/lib/ai/entitlements";
 import { systemMessages } from "@/lib/ai/prompts";
 import { getLanguageModel } from "@/lib/ai/providers";
 import { type ToolAuditEntry, wrapTool } from "@/lib/ai/tool-wrapper";
+import { browseCategories } from "@/lib/ai/tools/browse-categories";
 import { cancelOrder } from "@/lib/ai/tools/cancel-order";
 import { createDocument } from "@/lib/ai/tools/create-document";
 import { createOrder } from "@/lib/ai/tools/create-order";
@@ -275,6 +276,7 @@ export async function POST(request: Request) {
           experimental_activeTools: isReasoningModel
             ? []
             : [
+                "browseCategories",
                 "getMarkets",
                 "getPositions",
                 "getPortfolio",
@@ -298,6 +300,11 @@ export async function POST(request: Request) {
               }
             : undefined,
           tools: {
+            browseCategories: wrapTool(
+              "browseCategories",
+              browseCategories({ session }),
+              toolAuditQueue
+            ),
             getMarkets: wrapTool(
               "getMarkets",
               getMarkets({ session }),
