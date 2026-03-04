@@ -17,14 +17,14 @@ export const chatModels: ChatModel[] = [
     description: "Fast and affordable, great for everyday tasks",
   },
   {
-    id: "anthropic/claude-sonnet-4.5",
-    name: "Claude Sonnet 4.5",
+    id: "anthropic/claude-sonnet-4.6",
+    name: "Claude Sonnet 4.6",
     provider: "anthropic",
     description: "Best balance of speed, intelligence, and cost",
   },
   {
-    id: "anthropic/claude-opus-4.5",
-    name: "Claude Opus 4.5",
+    id: "anthropic/claude-opus-4.6",
+    name: "Claude Opus 4.6",
     provider: "anthropic",
     description: "Most capable Anthropic model",
   },
