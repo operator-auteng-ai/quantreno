@@ -1,3 +1,4 @@
+import type { SystemModelMessage } from "ai";
 import type { Geo } from "@vercel/functions";
 import type { ArtifactKind } from "@/components/artifact";
 
@@ -76,6 +77,9 @@ export type RequestHints = {
   country: Geo["country"];
 };
 
+/**
+ * Build the system prompt as a string (for non-cached uses like tests).
+ */
 export const systemPrompt = ({
   selectedChatModel,
   sessionContext,
@@ -96,6 +100,54 @@ export const systemPrompt = ({
   }
 
   return `${base}\n\n${artifactsPrompt}`;
+};
+
+/**
+ * Build the system prompt as an array of SystemModelMessages for prompt caching.
+ *
+ * The static prompt (regularPrompt + artifactsPrompt) is marked with Anthropic's
+ * ephemeral cache control so it's cached across turns within a 5-minute TTL.
+ * The dynamic session context (balance, positions, strategies) is sent uncached
+ * since it changes every turn.
+ *
+ * Anthropic prompt caching requires ≥1024 tokens before the cache breakpoint.
+ * Our static prompt is ~1500 tokens, so it qualifies.
+ */
+export const systemMessages = ({
+  selectedChatModel,
+  sessionContext,
+}: {
+  selectedChatModel: string;
+  sessionContext?: string;
+}): SystemModelMessage[] => {
+  const isReasoningModel =
+    selectedChatModel.includes("reasoning") ||
+    selectedChatModel.includes("thinking");
+
+  // Static prompt — same for every request, cacheable
+  const staticContent = isReasoningModel
+    ? regularPrompt
+    : `${regularPrompt}\n\n${artifactsPrompt}`;
+
+  const messages: SystemModelMessage[] = [
+    {
+      role: "system",
+      content: staticContent,
+      providerOptions: {
+        anthropic: { cacheControl: { type: "ephemeral" } },
+      },
+    },
+  ];
+
+  // Dynamic context — changes per turn, not cached
+  if (sessionContext) {
+    messages.push({
+      role: "system",
+      content: `## Current session context\n${sessionContext}`,
+    });
+  }
+
+  return messages;
 };
 
 export const codePrompt = `

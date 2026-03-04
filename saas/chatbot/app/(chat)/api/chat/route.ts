@@ -10,7 +10,7 @@ import { after } from "next/server";
 import { createResumableStreamContext } from "resumable-stream";
 import { auth, type UserType } from "@/app/(auth)/auth";
 import { entitlementsByUserType } from "@/lib/ai/entitlements";
-import { systemPrompt } from "@/lib/ai/prompts";
+import { systemMessages } from "@/lib/ai/prompts";
 import { getLanguageModel } from "@/lib/ai/providers";
 import { type ToolAuditEntry, wrapTool } from "@/lib/ai/tool-wrapper";
 import { cancelOrder } from "@/lib/ai/tools/cancel-order";
@@ -251,9 +251,27 @@ export async function POST(request: Request) {
       execute: async ({ writer: dataStream }) => {
         const result = streamText({
           model: getLanguageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel, sessionContext }),
+          system: systemMessages({ selectedChatModel, sessionContext }),
           messages: modelMessages,
           stopWhen: stepCountIs(5),
+          // Cache the last user message so multi-step tool calls don't
+          // re-read the full conversation on each step (Anthropic only).
+          prepareStep: ({ messages: stepMessages }) => {
+            if (stepMessages.length === 0) return {};
+            const last = stepMessages[stepMessages.length - 1];
+            return {
+              messages: [
+                ...stepMessages.slice(0, -1),
+                {
+                  ...last,
+                  providerOptions: {
+                    ...last.providerOptions,
+                    anthropic: { cacheControl: { type: "ephemeral" } },
+                  },
+                },
+              ],
+            };
+          },
           experimental_activeTools: isReasoningModel
             ? []
             : [
