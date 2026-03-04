@@ -80,7 +80,6 @@ export default function RootLayout({
           attribute="class"
           defaultTheme="dark"
           disableTransitionOnChange
-          enableSystem
         >
           <Toaster position="top-center" />
           <SessionProvider>{children}</SessionProvider>

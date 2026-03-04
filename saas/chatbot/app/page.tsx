@@ -11,6 +11,7 @@ import {
   TrendingUp,
   Zap,
 } from "lucide-react";
+import { ThemeSwitch } from "@/components/theme-switch";
 
 export default function LandingPage() {
   return (
@@ -606,13 +607,14 @@ function Footer() {
               AI-powered prediction market trading.
             </p>
           </div>
-          <div className="flex gap-6 text-muted-foreground text-sm">
+          <div className="flex items-center gap-6 text-muted-foreground text-sm">
             <Link className="hover:text-foreground" href="/login">
               Sign In
             </Link>
             <Link className="hover:text-foreground" href="#pricing">
               Pricing
             </Link>
+            <ThemeSwitch />
           </div>
         </div>
 

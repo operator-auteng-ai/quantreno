@@ -23,8 +23,8 @@ export async function proxy(request: NextRequest) {
     secureCookie: !isDevelopmentEnvironment,
   });
 
-  // Public landing page — always accessible
-  if (pathname === "/") {
+  // Public pages — always accessible
+  if (pathname === "/" || pathname === "/design-system") {
     return NextResponse.next();
   }
 
