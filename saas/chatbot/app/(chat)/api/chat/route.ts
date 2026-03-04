@@ -153,11 +153,18 @@ export async function POST(request: Request) {
 
     const kalshiPromise = getKalshiClientForUser(session.user.id)
       .then(async (client) => {
-        const [balance, positions] = await Promise.all([
+        const [balance, positionsData] = await Promise.all([
           client.getBalance(),
           client.getPositions({ count_filter: "position" }),
         ]);
-        return { balance, positions: positions.positions ?? [] };
+        const rawPositions = positionsData.positions ?? [];
+        log.info("session-context", "Kalshi data fetched", {
+          userId: session.user.id,
+          balance: balance.balance,
+          rawPositionCount: rawPositions.length,
+          tickers: rawPositions.map((p) => `${p.ticker}:${p.position}`),
+        });
+        return { balance, positions: rawPositions };
       })
       .catch((err: Error) => {
         // No credentials saved → expected state, not an error

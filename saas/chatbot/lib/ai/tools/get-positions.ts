@@ -36,15 +36,16 @@ current P&L, or to see which markets the user is already exposed to.`,
             : Promise.resolve({ orders: [] }),
         ]);
 
-        const positions = (positionsData.positions ?? []).filter(
-          (p) => p.position !== 0
-        );
+        const rawPositions = positionsData.positions ?? [];
+        const positions = rawPositions.filter((p) => p.position !== 0);
 
         log.info("getPositions", "fetched", {
           userId: session.user.id,
           balance: balanceData.balance,
-          positionCount: positions.length,
+          rawPositionCount: rawPositions.length,
+          filteredPositionCount: positions.length,
           orderCount: ordersData.orders.length,
+          rawTickers: rawPositions.map((p) => `${p.ticker}:${p.position}`),
         });
 
         return {

@@ -21,7 +21,8 @@ import type {
   KalshiTrade,
 } from "./types";
 
-export const KALSHI_BASE_URL = "https://trading-api.kalshi.com/trade-api/v2";
+export const KALSHI_BASE_URL =
+  "https://api.elections.kalshi.com/trade-api/v2";
 
 // ─── Auth signing ─────────────────────────────────────────────────────────────
 
@@ -212,7 +213,11 @@ export function createKalshiClient(credentials: KalshiCredentials) {
       positions: KalshiPosition[];
       cursor?: string;
     }> {
-      return get("/portfolio/positions", {
+      const result = await get<{
+        positions?: KalshiPosition[];
+        market_positions?: KalshiPosition[];
+        cursor?: string;
+      }>("/portfolio/positions", {
         limit: params.limit,
         cursor: params.cursor,
         count_filter: params.count_filter,
@@ -220,6 +225,33 @@ export function createKalshiClient(credentials: KalshiCredentials) {
         ticker: params.ticker,
         event_ticker: params.event_ticker,
       });
+
+      // Log raw response keys to diagnose empty positions issues
+      log.info("kalshi", "getPositions raw response keys", {
+        keys: Object.keys(result),
+        positionsCount: Array.isArray(result.positions)
+          ? result.positions.length
+          : "not-array",
+        marketPositionsCount: Array.isArray(
+          (result as Record<string, unknown>).market_positions
+        )
+          ? (
+              (result as Record<string, unknown>)
+                .market_positions as unknown[]
+            ).length
+          : "not-present",
+      });
+
+      // Handle potential API response shape differences
+      const positions =
+        result.positions ??
+        (result as Record<string, unknown>).market_positions ??
+        [];
+
+      return {
+        positions: positions as KalshiPosition[],
+        cursor: result.cursor,
+      };
     },
 
     // ── Portfolio: orders ─────────────────────────────────────────────────────
