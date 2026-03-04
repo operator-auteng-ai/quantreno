@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { User } from "next-auth";
+import Image from "next/image";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useSWRConfig } from "swr";
@@ -71,8 +72,25 @@ export function AppSidebar({ user }: { user: User | undefined }) {
                   setOpenMobile(false);
                 }}
               >
-                <span className="cursor-pointer rounded-md px-2 font-semibold text-lg hover:bg-muted">
-                  Quantreno
+                <span className="cursor-pointer rounded-md p-1 hover:bg-muted">
+                  <Image
+                    alt="Quantreno"
+                    className="h-6 w-auto dark:hidden"
+                    height={24}
+                    priority
+                    src="/logo-light-bg.svg"
+                    unoptimized
+                    width={124}
+                  />
+                  <Image
+                    alt="Quantreno"
+                    className="hidden h-6 w-auto dark:block"
+                    height={24}
+                    priority
+                    src="/logo-dark-bg.svg"
+                    unoptimized
+                    width={124}
+                  />
                 </span>
               </Link>
               <div className="flex flex-row gap-1">

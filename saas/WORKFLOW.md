@@ -5,6 +5,23 @@
 - Always read and apply `docs/CODING-STANDARDS.md` before planning, coding, reviewing, or generating code.
 - Treat `docs/CODING-STANDARDS.md` as normative. If another instruction conflicts, explicitly call out the conflict and follow the stricter production/security requirement.
 
+## Branching Policy
+
+- **Always work on a branch.** Never commit directly to `main`.
+- Create a descriptive feature/fix branch before starting any work (e.g., `feat/add-auth`, `fix/market-polling`).
+- **Never merge to `main` unless explicitly asked by the user.**
+- When merging to `main`, **always use squash merge** (`git merge --squash <branch>`) to keep history clean.
+
+## Testing Policy
+
+All changes must be verified locally before considering work complete. Run tests in this order:
+
+1. **Unit tests first** — fast, isolated tests for domain logic and utilities.
+2. **Integration / API tests second** — tests for adapters, persistence, and API endpoints.
+3. **System-level browser tests last** — end-to-end tests for critical user journeys.
+
+Do not skip levels. A failure at any level must be fixed before proceeding to the next.
+
 ## Required Session Read Order
 
 1. `docs/CODING-STANDARDS.md`
@@ -85,4 +102,6 @@
 
 - Verify against the phase exit criteria in `docs/PLAN.md`.
 - Run type check, lint, and build before considering a task complete.
+- Run the full test ladder: unit → integration/API → system-level browser (see Testing Policy above).
 - Update `UP_NEXT.md` with progress.
+- Do **not** merge to `main` unless the user explicitly requests it. When merging, use squash merge.

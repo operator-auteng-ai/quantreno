@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useSession } from "next-auth/react";
+import Image from "next/image";
 import { useActionState, useEffect, useState } from "react";
 
 import { AuthForm } from "@/components/auth-form";
@@ -61,8 +62,25 @@ export default function Page() {
     <>
       {/* Wordmark */}
       <div className="flex flex-col items-center gap-4">
-        <Link className="font-semibold text-lg tracking-tight" href="/">
-          Quantreno
+        <Link className="flex items-center" href="/">
+          <Image
+            alt="Quantreno"
+            className="h-8 w-auto dark:hidden"
+            height={32}
+            priority
+            src="/logo-light-bg.svg"
+            unoptimized
+            width={160}
+          />
+          <Image
+            alt="Quantreno"
+            className="hidden h-8 w-auto dark:block"
+            height={32}
+            priority
+            src="/logo-dark-bg.svg"
+            unoptimized
+            width={160}
+          />
         </Link>
         <div className="text-center">
           <h3 className="font-semibold text-xl">Create Account</h3>

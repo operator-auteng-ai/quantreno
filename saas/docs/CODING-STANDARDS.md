@@ -61,10 +61,11 @@ Schema definitions are the source of truth whenever possible.
 
 ## 6) Testing and verification
 
-- Required test layers:
-  - Unit tests for domain logic.
-  - Integration tests for adapters and persistence.
-  - End-to-end tests for critical user journeys.
+- Required test layers, run in this order locally before considering work complete:
+  1. **Unit tests** for domain logic (run first).
+  2. **Integration / API tests** for adapters and persistence (run second).
+  3. **System-level browser / E2E tests** for critical user journeys (run last).
+- Do not skip levels. Fix failures at each level before proceeding to the next.
 - Contract tests are required for generated API/database interfaces.
 - Bug fixes must include a regression test when practical.
 - CI must run type-check, lint, tests, and build before merge.
@@ -90,7 +91,9 @@ Schema definitions are the source of truth whenever possible.
 
 ## 9) Code review and merge standards
 
+- **All work happens on a branch — never commit directly to `main`.**
 - No direct merges without passing CI.
+- **Never merge to `main` unless explicitly requested.** When merging, always use **squash merge**.
 - Reviews focus on correctness, security, behavior changes, and maintainability.
 - Reject changes that introduce unnecessary duplication when reusable abstractions exist.
 - Generated files are acceptable only when source schema/tooling is included and reproducible.

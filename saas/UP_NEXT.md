@@ -2,73 +2,68 @@
 
 ## Active Phase
 
-**Phase 1: Trading Core** — COMPLETE
+**Phase 2: Portfolio & Strategies** — Ready to start
 
 ## What Was Completed
 
+### Product Redesign (2026-03-03, branch: `ph3`)
+- 6 Playbooks replacing 4 ad-hoc strategies (Event-Driven, Relative Value, Tail Risk, Momentum, Mean Reversion, Macro Thematic)
+- Account → Strategy → Trade portfolio model
+- Two-layer risk engine (strategy-level + account-level)
+- Theme→Strategy, Archetype→Playbook naming
+- Compute & Finance architecture: `lib/finance/` interface boundary, V2 Python path, AWS+Terraform option
+- All docs rewritten: VISION.md, ARCH.md, PLAN.md, TAXONOMY.md
+
 ### Phase 0 Infrastructure (2026-03-01)
-- Vercel project created + connected to `operator-auteng-ai/trading`
-- Supabase project created, migrations run (12 tables)
-- Upstash Redis configured
-- Google OAuth configured (Google Cloud Console + NextAuth)
-- All env vars in Vercel + `.env.local`
+- Vercel + Supabase + Upstash Redis + Google OAuth
 - Production deploy live, Google sign-in working
-- Redirect loop in `proxy.ts` fixed
 
-### Phase 0.4 — Cleanup (2026-02-28)
-- Removed weather tool, Pyodide runtime, "Deploy with Vercel" branding
-- Applied Operator trading agent persona to system prompt
-- Updated app title, meta tags, suggested actions, sidebar branding
-
-### Phase 1.1 — Kalshi API Client (2026-02-28)
-- `lib/kalshi/client.ts` — RSA-PSS signed REST client
-- `lib/kalshi/encrypt.ts` — AES-256-GCM credential encryption
-- KalshiCredential table + migration
-
-### Phase 1.2 — Kalshi Onboarding Flow (2026-02-28)
-- `/api/kalshi/credentials` route (GET/POST/DELETE)
-- `/settings` page + `KalshiConnectionForm` component
-
-### Phase 1.3 — Trading Tools (2026-02-28)
-- `getMarkets`, `getPositions`, `createOrder`, `cancelOrder` AI tools
-
-### Phase 1.4 — Research Tools (2026-02-28)
-- `webSearch` (Tavily) and `xSearch` (X API v2) tools
-
-### Phase 1.5 — Trading State (2026-03-01)
-- Trade table + migration
-- Auto-log on `createOrder`/`cancelOrder`
-- `getPortfolio` tool — live positions from Kalshi + unrealized P&L vs Trade table entry prices
-- `getTradeHistory` tool — query Trade table with status filtering and P&L summary
-
-### Phase 1.6 — Session Context (2026-02-28)
-- Open trades injected into system prompt on each chat turn
+### Phase 1: Trading Core (2026-02-28 → 2026-03-01)
+- Kalshi REST client with RSA-PSS auth + AES-256-GCM credential encryption
+- Settings page + credentials onboarding
+- 8 AI tools: `getMarkets`, `getPositions`, `createOrder`, `cancelOrder`, `webSearch`, `xSearch`, `getPortfolio`, `getTradeHistory`
+- Trade table with auto-logging
+- Session context injection (open trades in system prompt)
 
 ---
 
-## Phase 1 Exit Criteria — All Met
-- [x] User can connect Kalshi account via settings
-- [x] User can ask "what's on Kalshi?" and get market data
-- [x] User can ask agent to research a thesis (web + X search)
-- [x] User can approve and execute trades via chat
-- [x] Trades are logged and positions tracked
-- [x] User can ask "how are my positions?" — `getPortfolio` returns live P&L
+## Phase 2 Scope
 
----
+> See `docs/PLAN.md` Phase 2 for full breakdown.
 
-## Immediate Next Tasks
+### 2.1 — Strategy Schema & CRUD
+- Strategy table (Drizzle schema + migration)
+- `listStrategies`, `createStrategy`, `updateStrategy` AI tools
+- Strategy config validation per playbook
 
-### Phase 2 — Ready to plan
-- See `docs/PLAN.md` for Phase 2 scope
-- Likely includes: automated scans (QStash cron), recommendations, multi-exchange support
+### 2.2 — Playbook Engine
+- Playbook pipeline interface: `scan → research → rank → size → riskCheck → recommend`
+- Implement Event-Driven playbook (first, most complete from Phase 1 tools)
+- `runStrategy` tool that executes the pipeline
+
+### 2.3 — Risk Engine
+- `lib/finance/` module: sizing.ts, risk.ts, indicators.ts, portfolio.ts
+- Strategy-level checks (budget, Kelly, entry rules, thesis)
+- Account-level checks (exposure, correlation, drawdown, daily loss)
+- `getRiskStatus` tool
+
+### 2.4 — Strategy Performance
+- Position table + Recommendation table
+- Per-strategy P&L tracking
+- PerformanceSnapshot table (daily snapshots)
+
+### 2.5 — Account Setup Flow
+- Allocated capital setting
+- Risk preference defaults
+- Account-level risk field UI
 
 ---
 
 ## Blockers
 
-- None
+- `ph3` branch needs to merge to `main` before Phase 2 implementation starts
 
-## Decisions Made
+## Decisions Pending
 
-- Position/Recommendation/Scan tables **deferred** — Trade table + Kalshi live API covers all Phase 1 use cases
-- `getPortfolio` fetches live prices from Kalshi per-position (accurate, not stale)
+- Phase 2 sub-phase ordering: start with 2.1 (schema) or 2.3 (lib/finance) first?
+- Which playbook to implement first after Event-Driven?

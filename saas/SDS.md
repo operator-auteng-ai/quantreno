@@ -88,6 +88,11 @@ chatbot/
     ai/                     # AI SDK config, models, tools, prompts
     db/                     # Drizzle schema, queries, migrations
     kalshi/                 # Kalshi API client, encryption
+  public/
+    favicon.svg            # canonical favicon asset
+    logo.svg               # neutral logo mark asset
+    logo-dark-bg.svg       # logo mark for dark backgrounds
+    logo-light-bg.svg      # logo mark for light backgrounds
 ```
 
 Import rules:
@@ -149,6 +154,15 @@ Typography defaults:
 - Base text size: 14px equivalent (Tailwind `text-sm`)
 - Marketing hero: up to `text-6xl` on landing page only
 
+### 7.1 Brand Wordmark Exception
+
+Landing nav brand uses a combined logo treatment:
+
+- Graphic mark: use `/logo-light-bg.svg` in light mode and `/logo-dark-bg.svg` in dark mode.
+- Text: render `QUANTRENO` adjacent to the mark in a geometric sans-serif stack:
+  - `"Avenir Next", "Futura", "Century Gothic", "Montserrat", sans-serif`
+- Scope: this geometric stack is only for the landing nav wordmark. Keep Geist Sans as the system UI/body font elsewhere.
+
 Density guidelines:
 
 - Chat interface: comfortable spacing (message bubbles, tool results)
@@ -158,7 +172,7 @@ Density guidelines:
 
 Do not:
 
-- Mix additional font families beyond Geist Sans and Geist Mono
+- Mix additional font families beyond Geist Sans and Geist Mono, except the landing nav brand wordmark exception above
 - Use compact density in marketing/landing contexts
 - Display prices without monospace font
 

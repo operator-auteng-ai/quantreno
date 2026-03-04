@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight,
   BarChart3,
@@ -31,8 +32,35 @@ function Nav() {
   return (
     <nav className="sticky top-0 z-50 border-b border-border/50 bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
-        <Link className="font-semibold text-lg tracking-tight" href="/">
-          Quantreno
+        <Link className="flex items-center gap-2" href="/">
+          <Image
+            alt="Quantreno logo"
+            className="h-7 w-7 dark:hidden"
+            height={28}
+            priority
+            src="/logo-light-bg.svg"
+            unoptimized
+            width={28}
+          />
+          <Image
+            alt="Quantreno logo"
+            className="hidden h-7 w-7 dark:block"
+            height={28}
+            priority
+            src="/logo-dark-bg.svg"
+            unoptimized
+            width={28}
+          />
+          <span
+            className="font-semibold text-lg tracking-tight"
+            style={{
+              fontFamily:
+                '"Avenir Next", "Futura", "Century Gothic", "Montserrat", sans-serif',
+              letterSpacing: "0.01em",
+            }}
+          >
+            QUANTRENO
+          </span>
         </Link>
         <div className="flex items-center gap-6">
           <Link

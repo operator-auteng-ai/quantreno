@@ -219,3 +219,52 @@
 - `getPortfolio` fetches live market prices per position (accurate) — accepted the N+1 API call tradeoff; positions are typically <20, and `Promise.allSettled` handles failures gracefully
 - Position/Recommendation/Scan tables deferred — Trade table + Kalshi live API covers Phase 1 needs
 - **Phase 1 exit criteria: all met**
+
+---
+
+## 2026-03-03 — Product Redesign: Playbooks, Strategies, Risk Engine, Compute Architecture
+
+**Phase:** Pre-Phase 2 (Product & Architecture Redesign)
+
+### Context
+
+Stepped back before Phase 2 to rethink the product at a fundamental level. The 4 ad-hoc strategies (oil, fat-tails, volatility-swing, spread-arb) were replaced with 6 established financial patterns. The portfolio model, risk engine, naming conventions, and compute architecture were redesigned.
+
+### Changes
+
+**Product Model Redesign (all docs)**
+- Replaced 4 ad-hoc strategies with 6 system-provided **Playbooks**: Event-Driven, Relative Value, Tail Risk, Momentum, Mean Reversion, Macro Thematic
+- Introduced **Account → Strategy → Trade** hierarchy: users create named Strategies that apply a Playbook to a specific idea (e.g., "War-Driven Oil Shock" uses Event-Driven playbook)
+- Added two-layer **Risk Engine**: strategy-level (budget, Kelly, entry/exit rules, thesis) + account-level (exposure cap, correlation, drawdown pause, daily loss limit)
+- Positioned product as "allocate cash to AI portfolio manager" for retail investors, not a quant trading tool
+- Days-to-months timescales, not microseconds
+
+**Naming Cleanup**
+- Renamed Theme → **Strategy**, Archetype → **Playbook** across all docs (more natural for non-finance retail users)
+
+**Compute & Finance Architecture (ARCH.md)**
+- Researched TS/JS finance ecosystem — found adequate for V1 binary prediction markets (`simple-statistics`, `trading-signals`) but 5-10 years behind Python for V2 instruments
+- Added `lib/finance/` interface boundary: pure functions for sizing, risk, indicators, portfolio math
+- V1: inline TS math. V2: same interfaces swap to `fetch()` calls to a Python quant service
+- Documented QStash callback pattern for async Python worker integration
+- Added AWS+Terraform as V2 infrastructure option alongside Vercel+sidecar
+
+### Files Modified
+- `saas/docs/VISION.md` — complete rewrite (playbooks, strategies, risk controls, retail positioning)
+- `saas/docs/ARCH.md` — complete rewrite (portfolio model, playbook system, risk engine, DB schema, tools, Compute & Finance section, updated ADRs)
+- `saas/docs/PLAN.md` — complete rewrite (6 phases, removed time targets and checkboxes, Phase 2 = Portfolio & Strategies)
+- `saas/docs/TAXONOMY.md` — complete rewrite (new terminology, 6 playbooks, strategy states, risk controls, updated tool names)
+
+### Commits (branch: `ph3`)
+- `f2ca4e2` — Redesign product model: 6 playbooks, Account→Strategy→Trade, two-layer risk engine
+- `6e71050` — Rename Theme→Strategy and Archetype→Playbook across all docs
+- `7998c1d` — TAXONOMY update with new terminology
+- `8526ee1` — Add Compute & Finance section: lib/finance/ interfaces, V2 Python path, AWS+Terraform option
+
+### Decisions
+- **6 Playbooks over 4 ad-hoc strategies** — grounded in established finance (event-driven, relative value, tail risk, momentum, mean reversion, macro thematic)
+- **Strategy + Playbook naming** — "Strategy" is what users naturally say; "Playbook" is clear and non-jargony
+- **V1 TS finance math is sufficient** — binary contracts (pay $1 or $0) only need Kelly, drawdown, basic stats. No QuantLib needed.
+- **`lib/finance/` interface boundary** — pure functions with no awareness of implementation. V2 swaps bodies to HTTP calls. No app code changes.
+- **AWS+Terraform as V2 option** — don't decide now, ship V1 on Vercel, evaluate after traction
+- **Multi-instrument architecture ready but not implemented** — `instrumentType` enum on Strategy, `exchange` on Trade/Position. V1 = `prediction_market` only.

@@ -10,6 +10,10 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://quantreno.com"),
   title: "Quantreno — Look at my Quant",
   description: "AI-powered research and execution for Kalshi prediction markets.",
+  icons: {
+    icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+    shortcut: ["/favicon.svg"],
+  },
 };
 
 export const viewport = {
