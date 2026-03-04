@@ -2,14 +2,6 @@ import {
   Sparkles,
   Palette,
   Type,
-  MousePointerClick,
-  Tag,
-  RectangleHorizontal,
-  CreditCard,
-  AlertCircle,
-  LineChart,
-  Navigation,
-  Layers,
   Atom,
   FlaskConical,
   Component,
@@ -19,6 +11,7 @@ import {
   Zap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { getCounts, getGalleryDescriptions } from "../_registry/helpers";
 
 export type Section = {
   id: string;
@@ -37,11 +30,15 @@ export type GalleryCategory = {
   tab: "components" | "tokens";
 };
 
+// Derive counts from the canonical registry
+const counts = getCounts();
+const descriptions = getGalleryDescriptions();
+
 // ── Components page: Atoms → Molecules → Components ──
 export const COMPONENT_SECTIONS: readonly Section[] = [
-  { id: "atoms", label: "Atoms", icon: Atom, count: 12 },
-  { id: "molecules", label: "Molecules", icon: FlaskConical, count: 12 },
-  { id: "components", label: "Components", icon: Component, count: 6 },
+  { id: "atoms", label: "Atoms", icon: Atom, count: counts.atom },
+  { id: "molecules", label: "Molecules", icon: FlaskConical, count: counts.molecule },
+  { id: "components", label: "Components", icon: Component, count: counts.component },
 ] as const;
 
 // ── Tokens page: Primitives, Colors, Typography, Shadows, Motion, Z-Index, Animations ──
@@ -57,11 +54,11 @@ export const TOKEN_SECTIONS: readonly Section[] = [
 
 // ── Gallery: overview of all categories ──
 export const GALLERY_CATEGORIES: readonly GalleryCategory[] = [
-  // Components
-  { id: "atoms", label: "Atoms", icon: Atom, count: 12, description: "Buttons, badges, inputs, labels, progress, skeleton, avatar, tooltip, separator", linkTo: "/design-system/components#atoms", tab: "components" },
-  { id: "molecules", label: "Molecules", icon: FlaskConical, count: 12, description: "Alerts, cards, price pills, edge meters, nav items, stat cards, chat messages", linkTo: "/design-system/components#molecules", tab: "components" },
-  { id: "components", label: "Components", icon: Component, count: 6, description: "P&L display, order confirmation, portfolio summary, market overview, chat input", linkTo: "/design-system/components#components", tab: "components" },
-  // Tokens
+  // Components — counts derived from registry
+  { id: "atoms", label: "Atoms", icon: Atom, count: counts.atom, description: descriptions.atoms, linkTo: "/design-system/components#atoms", tab: "components" },
+  { id: "molecules", label: "Molecules", icon: FlaskConical, count: counts.molecule, description: descriptions.molecules, linkTo: "/design-system/components#molecules", tab: "components" },
+  { id: "components", label: "Components", icon: Component, count: counts.component, description: descriptions.components, linkTo: "/design-system/components#components", tab: "components" },
+  // Tokens — static counts
   { id: "primitives", label: "Primitives", icon: Sparkles, count: 4, description: "Indigo, mint, teal, and neutral color scales (11 steps each)", linkTo: "/design-system/tokens#primitives", tab: "tokens" },
   { id: "colors", label: "Colors", icon: Palette, count: 5, description: "Core palette, brand, signal, confidence, and chart colors", linkTo: "/design-system/tokens#colors", tab: "tokens" },
   { id: "typography", label: "Typography", icon: Type, count: 2, description: "Geist Sans for interface, Geist Mono for data", linkTo: "/design-system/tokens#typography", tab: "tokens" },

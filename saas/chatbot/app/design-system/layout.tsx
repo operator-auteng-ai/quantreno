@@ -38,7 +38,7 @@ export default function DesignSystemLayout({
           {/* Center: Tab Nav */}
           <nav className="hidden sm:flex items-center gap-1">
             {TABS.map((tab) => {
-              const isActive = tab.exact
+              const isActive = "exact" in tab && tab.exact
                 ? pathname === tab.href
                 : pathname.startsWith(tab.href);
               return (
