@@ -1,0 +1,22 @@
+# Secrets
+.env
+*.key
+*.pem
+
+# Data
+data/
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+
+# OS
+.DS_Store
+
+.mcp.json
+.claude/
+
+*.tsbuildinfo
+saas/chatbot/next-env.d.ts
