@@ -77,7 +77,7 @@
     "postgres": "^3.4.4",
     "prosemirror-example-setup": "^1.2.3",
     "prosemirror-inputrules": "^1.4.0",
-    "prosemirror-markdown": "^1.13.1",
+    "prosemirror-markdown": "^1.13.4",
     "prosemirror-model": "^1.23.0",
     "prosemirror-schema-basic": "^1.2.3",
     "prosemirror-schema-list": "^1.4.1",
