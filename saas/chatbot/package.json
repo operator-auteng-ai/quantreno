@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@ai-sdk/gateway": "^3.0.15",
-    "@ai-sdk/provider": "^3.0.3",
+    "@ai-sdk/provider": "^3.0.8",
     "@ai-sdk/react": "3.0.39",
     "@codemirror/lang-javascript": "^6.2.2",
     "@codemirror/lang-python": "^6.1.6",
